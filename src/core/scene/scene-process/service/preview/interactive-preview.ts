@@ -9,6 +9,9 @@ import type { IPreviewInstance } from '../../../common/preview';
 
 const tempVec3A = new Vec3();
 const tempVec3B = new Vec3();
+// Leave a small margin around model previews so the calculated fit does not
+// place the mesh directly against the viewport edges.
+const CAMERA_FIT_PADDING = 1.2;
 
 function getBoundaryOfMeshNodes(nodes: Node[]): geometry.AABB | null {
     let minPos = new Vec3(Infinity, Infinity, Infinity);
@@ -334,7 +337,7 @@ class InteractivePreview extends PreviewBase implements IPreviewInstance {
             const fov = this.cameraComp.fov * Math.PI / 180;
             const requiredDist = radius / Math.tan(fov / 2);
             const dist = Vec3.distance(this.cameraComp.node.worldPosition, boundary.center);
-            this.viewDist = Math.max(dist, requiredDist);
+            this.viewDist = Math.max(dist, requiredDist) * CAMERA_FIT_PADDING;
             Vec3.set(this.viewCenter, boundary.center.x, boundary.center.y, boundary.center.z);
             orthoHeight = Math.max(1, radius * 1.2);
         } else if (this._modelNode) {
