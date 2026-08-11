@@ -181,4 +181,14 @@ index 0e03023..bd406a7 100644
 +  GLuint *bufferPtr = static_cast<GLuint *>(values->Buffer()->Data());
    glClearBufferuiv(buffer, drawbuffer, bufferPtr);
  }
- 
+
+diff --git a/node_modules/nan/nan_typedarray_contents.h b/node_modules/nan/nan_typedarray_contents.h
+--- a/node_modules/nan/nan_typedarray_contents.h
++++ b/node_modules/nan/nan_typedarray_contents.h
+@@ -34,5 +34,5 @@
+ #if (V8_MAJOR_VERSION >= 8)
+-      data = static_cast<char*>(buffer->GetBackingStore()->Data()) + byte_offset;
++      data = static_cast<char*>(buffer->Data()) + byte_offset;
+ #else
+       data = static_cast<char*>(buffer->GetContents().Data()) + byte_offset;
+ #endif

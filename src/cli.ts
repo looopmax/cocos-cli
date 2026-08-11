@@ -41,8 +41,10 @@ program.configureHelp({
 });
 
 // 解析命令行参数
+// 显式使用 node 参数约定：Electron Node 模式下 commander 默认按 electron 约定解析（slice(1)），
+// 会把脚本路径误判为命令，此处固定为 node 约定（slice(2)）以保证两种运行时行为一致。
 try {
-    program.parse();
+    program.parse(process.argv, { from: 'node' });
 
     // 设置交互模式
     const interactiveMode = !program.getOptionValue('noInteractive');

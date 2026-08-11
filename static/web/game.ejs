@@ -55,6 +55,7 @@
     <script>
         window.WebEnv = { serverURL: '<%= serverURL %>' };
         window.__launchSceneQuery = '<%= sceneQuery %>';
+        window.__violetRuntimeMode = new URLSearchParams(window.location.search).get('violetRuntime') === '1';
         // 构建标记：确认浏览器拿到的是「早注册 / 自愈」版本的 game.ejs（而非旧缓存或旧构建）。
         console.log('[Game Preview] page build marker: EARLY-ROUTE-FIX v6 (served from static/web/game.ejs)');
     </script>
@@ -74,7 +75,7 @@
         // 一个页面）。此段强依赖「早于 settings.js 执行」及 settings.js onerror 置 __previewSettingsFailed
         // 的时序，故保留在 game.ejs 内联、未纳入共用的 preview-live-reload.js。
         try {
-            var previewSocket = window.__previewSocket;
+            var previewSocket = window.__violetRuntimeMode ? null : window.__previewSocket;
             if (previewSocket) {
                 // settings.js onerror 时置位（见下方 script 标签），此函数在仍失败态且已连接时上报。
                 window.__notifyPreviewStuck = function () {

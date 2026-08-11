@@ -2,6 +2,62 @@
 
 import { loadEngine } from '/static/web/engine-loader.js';
 
+const VIOLET_RUNTIME_SOURCE = 'violet-cocos-runtime';
+
+function notifyVioletRuntime(type, payload = {}) {
+    const message = {
+        source: VIOLET_RUNTIME_SOURCE,
+        type,
+        timestamp: Date.now(),
+        ...payload,
+    };
+    window.__violetRuntime = message;
+    if (window.parent !== window) {
+        window.parent.postMessage(message, '*');
+    }
+}
+
+function installVioletRuntimeScheduler() {
+    if (!window.__violetRuntimeMode || window.__violetRuntimeSchedulerInstalled) return;
+
+    window.__violetRuntimeSchedulerInstalled = true;
+    const callbacks = new Map();
+    let nextHandle = 0;
+    const messageSource = '__violet_runtime_scheduler__';
+
+    window.addEventListener('message', (event) => {
+        if (event.source !== window || event.data?.source !== messageSource) return;
+        const callback = callbacks.get(event.data.handle);
+        if (!callback) return;
+        callbacks.delete(event.data.handle);
+        callback(performance.now());
+    });
+
+    window.requestAnimationFrame = (callback) => {
+        const handle = ++nextHandle;
+        callbacks.set(handle, callback);
+        window.postMessage({ source: messageSource, handle }, '*');
+        return handle;
+    };
+    window.cancelAnimationFrame = (handle) => callbacks.delete(handle);
+}
+
+function installVioletRuntimeHeartbeat(cc) {
+    let frame = 0;
+    let lastHeartbeat = 0;
+    const onAfterUpdate = () => {
+        frame += 1;
+        const now = Date.now();
+        if (now - lastHeartbeat < 500) return;
+        lastHeartbeat = now;
+        notifyVioletRuntime('heartbeat', { frame, scene: cc.director.getScene()?.name || '' });
+    };
+    if (cc.Director?.EVENT_AFTER_UPDATE && cc.director?.on) {
+        cc.director.on(cc.Director.EVENT_AFTER_UPDATE, onAfterUpdate);
+    }
+    return () => cc.director?.off?.(cc.Director.EVENT_AFTER_UPDATE, onAfterUpdate);
+}
+
 /**
  * 浏览器游戏预览运行时引导。
  *
@@ -10,12 +66,15 @@ import { loadEngine } from '/static/web/engine-loader.js';
  * 运行启动场景，而不是加载场景编辑器 bundle。流程对齐编辑器 preview-app/src/main.ts。
  */
 export default async function gameBoot() {
+    notifyVioletRuntime('booting');
+    installVioletRuntimeScheduler();
     const showError = (e) => {
         const el = document.getElementById('error');
         if (el) {
             el.style.display = 'block';
             el.textContent = (e && (e.stack || e.message)) || String(e);
         }
+        notifyVioletRuntime('error', { error: (e && (e.message || e.stack)) || String(e) });
     };
 
     // 热重载自愈监听：加载共用的「接收端」脚本（创建 socket + 注册 browser:reload，置 window.__previewSocket）。
@@ -162,6 +221,7 @@ export default async function gameBoot() {
         });
 
         await cc.game.init(option);
+        notifyVioletRuntime('engine-ready', { engine: 'cocos', version: cc.ENGINE_VERSION || '' });
 
         // 分辨率适配策略（仅浏览器预览）：按项目 designResolution 设置套用 ResolutionPolicy，
         // 使预览的拉伸/留边行为与真机构建一致。预览 settings 里的 screen.designResolution.policy
@@ -209,6 +269,8 @@ export default async function gameBoot() {
                     const scene = sceneAsset.scene;
                     scene._name = sceneAsset._name;
                     cc.director.runSceneImmediate(scene, () => {
+                        installVioletRuntimeHeartbeat(cc);
+                        notifyVioletRuntime('running', { scene: scene.name || sceneAsset._name || launchScene, frame: 0 });
                         cc.game.resume();
                     });
                 }

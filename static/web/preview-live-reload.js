@@ -22,7 +22,7 @@
  */
 (function () {
     try {
-        if (!window.io || window.__previewSocket) {
+        if (!window.io || window.__previewSocket || window.__violetRuntimeMode) {
             return;
         }
         var serverURL = (window.WebEnv && window.WebEnv.serverURL) || undefined;

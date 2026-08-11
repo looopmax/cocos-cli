@@ -50,3 +50,6 @@ config.local.json
 
 # 个人/本机配置（local 作用域），不进版本库
 profiles/cocos.config.json
+
+# 运行时生成的启动性能追踪数据
+static/web/pink-startup-trace.json
