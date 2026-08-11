@@ -426,7 +426,7 @@ async function buildSceneBundle() {
     await bundle.write({
         file: bundleOutputFile,
         format: 'system',
-        sourcemap: true,
+        sourcemap: false,
         banner: `
 (function() {
     var _process = {

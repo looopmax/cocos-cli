@@ -261,7 +261,10 @@ export class AssetDB extends EventEmitter {
             switch (asset.action) {
                 case AssetActionEnum.add: {
                     this.dataManager.empty(asset);
-                    if (await TASK_MAP.import.exec(this, asset, importer, true)) {
+                    const perfStart = Date.now();
+                    const imported = await TASK_MAP.import.exec(this, asset, importer, true);
+                    console.log(`[asset-db:${this.options.name}] import done: ${asset.source} action=${asset.action} elapsed=${Date.now() - perfStart}ms imported=${imported}`);
+                    if (imported) {
                         await asset.save();
                     }
 
@@ -276,7 +279,10 @@ export class AssetDB extends EventEmitter {
                 case AssetActionEnum.change: {
                     this.dataManager.empty(asset);
                     // await TASK_MAP.destroy.exec(this, asset);
-                    if (await TASK_MAP.import.exec(this, asset, importer, true)) {
+                    const perfStart = Date.now();
+                    const imported = await TASK_MAP.import.exec(this, asset, importer, true);
+                    console.log(`[asset-db:${this.options.name}] import done: ${asset.source} action=${asset.action} elapsed=${Date.now() - perfStart}ms imported=${imported}`);
+                    if (imported) {
                         await asset.save();
                     }
 
@@ -694,13 +700,18 @@ export class AssetDB extends EventEmitter {
             const preAddFiles: string[] = [];
             const addFiles: string[] = [];
             const deleteFiles: string[] = [];
+            const logFile = (file: string, kind: string) => {
+                console.log(`[asset-db:${this.options.name}] scan ${kind}: ${file} ts=${Date.now()}`);
+            };
             if (this.preImporterHandler) {
                 for (let file of files) {
                     if (!this.path2asset.has(file)) {
                         if (this.preImporterHandler(file)) {
                             preAddFiles.push(file);
+                            logFile(file, 'pre-import');
                         } else {
                             addFiles.push(file);
+                            logFile(file, 'add');
                         }
                         addSet.add(file);
                     }
@@ -710,6 +721,7 @@ export class AssetDB extends EventEmitter {
                 for (let file of files) {
                     if (!this.path2asset.has(file)) {
                         addFiles.push(file);
+                        logFile(file, 'add');
                         addSet.add(file);
                     }
                     fileSet.add(file);
