@@ -1,9 +1,10 @@
 'use strict';
 
-import { existsSync, readJSONSync, outputJSONSync, remove, removeSync } from 'fs-extra';
+import { remove, removeSync } from 'fs-extra';
 import { CustomConsole } from './console';
 import { join, relative } from 'path';
 import { Migrate, Migrator } from './migrator';
+import { fsExists, outputJSONSync, readJSONSync } from './filesystem';
 
 export interface SimpleInfo {
     time: number;
@@ -135,7 +136,7 @@ export class InfoManager {
                 this.console.warn(error);
             }
         });
-        if (existsSync(oldPath)) {
+        if (fsExists(oldPath)) {
             try {
                 const recordInfo = readJSONSync(oldPath);
                 await remove(oldPath);
@@ -146,7 +147,7 @@ export class InfoManager {
             return;
         }
 
-        if (existsSync(path)) {
+        if (fsExists(path)) {
             try {
                 const recordInfo = readJSONSync(path);
                 return await migrator.run(recordInfo, InfoManager.version, [this]);

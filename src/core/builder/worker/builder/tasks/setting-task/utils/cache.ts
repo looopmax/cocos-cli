@@ -1,6 +1,6 @@
 'use strict';
 
-import { readJSON } from 'fs-extra';
+import { readJSONAsync as readJSON } from '../../../../../../filesystem';
 
 /**
  * 根据缓存地址还原 settings 数据

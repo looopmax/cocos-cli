@@ -1,4 +1,5 @@
 import * as fs from 'fs-extra';
+import { readJSONSync } from '../../../../../filesystem';
 
 export interface MangleConfig {
     mangleProtected?: boolean;
@@ -24,7 +25,7 @@ export function parseMangleConfig(filePath: string, platform: string): MangleCon
     if (!fs.existsSync(filePath)) {
         return undefined;
     }
-    const configFile: ConfigFile = fs.readJSONSync(filePath, 'utf-8');
+    const configFile = readJSONSync<ConfigFile>(filePath);
 
     if (!configFile[platform]) {
         throw new Error(`Platform ${platform} not found in the configuration file.`);

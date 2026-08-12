@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import path, { isAbsolute, join, relative } from 'path';
-import { pathExists, stat, readFile } from 'fs-extra';
+import { stat, readFile } from 'fs-extra';
 import { GlobalPaths } from '../../global';
-import { readFileSync } from 'fs';
+import { pathExistsAsync as pathExists, readFileUtf8Sync, readJSONAsync } from '../filesystem';
 import {
     CUSTOM_PIPELINE_MODULE,
     deriveGraphicsConfigFromCustomPipeline,
@@ -60,8 +60,8 @@ async function queryFreshEngineModules(fallbackModules: string[]): Promise<strin
         const { configurationManager } = await import('../configuration');
         const fse = await import('fs-extra');
         const configPath = await configurationManager.getConfigPath();
-        if (await fse.pathExists(configPath)) {
-            const json = await fse.readJSON(configPath);
+        if (await pathExists(configPath)) {
+            const json = await readJSONAsync(configPath);
             const engineCfg = json?.engine;
             if (engineCfg) {
                 // 与 Engine.syncConfig 的解析一致：优先 engine.includeModules；
@@ -384,8 +384,8 @@ export const scriptingRoutes = [
                     cfg.overrideSettings.rendering.effectSettingsPath = `${serverBaseUrl}/scripting/engine/effect-settings`;
                 }
                 const configPath = await configurationManager.getConfigPath();
-                if (await fse.pathExists(configPath)) {
-                    const json = await fse.readJSON(configPath);
+                if (await pathExists(configPath)) {
+                    const json = await readJSONAsync(configPath);
                     const diskGroups = json?.engine?.physicsConfig?.collisionGroups;
                     if (Array.isArray(diskGroups)) {
                         cfg.overrideSettings.physics = cfg.overrideSettings.physics || {};
@@ -412,8 +412,8 @@ export const scriptingRoutes = [
                 const { configurationManager } = await import('../configuration');
                 const fse = await import('fs-extra');
                 const configPath = await configurationManager.getConfigPath();
-                if (await fse.pathExists(configPath)) {
-                    const json = await fse.readJSON(configPath);
+                if (await pathExists(configPath)) {
+                    const json = await readJSONAsync(configPath);
                     const disk = json?.engine?.designResolution;
                     if (disk && typeof disk.width === 'number' && typeof disk.height === 'number') {
                         // 以磁盘为准，缺失字段用缓存/默认补齐
@@ -443,7 +443,7 @@ export const scriptingRoutes = [
             const engineFilePath = path.join(enginePath, 'bin', '.editor', filename);
 
             try {
-                const content = readFileSync(engineFilePath);
+                const content = readFileUtf8Sync(engineFilePath);
                 res.setHeader('Content-Type', 'application/javascript');
                 res.status(200).send(content);
             } catch (error) {

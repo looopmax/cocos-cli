@@ -1,3 +1,4 @@
+import { pathExistsSync } from '../../filesystem';
 import { queryUUID, queryAsset, VirtualAsset, AssetDB, queryUrl, Asset, forEach, queryPath } from '@cocos/asset-db';
 import { isAbsolute, basename, extname } from 'path';
 import { QueryAssetType, IAsset } from '../@types/protected';
@@ -11,7 +12,8 @@ import i18n from '../../base/i18n';
 import assetConfig from '../asset-config';
 import minimatch from 'minimatch';
 import utils from '../../base/utils';
-import { existsSync, readJSONSync, readdirSync } from 'fs-extra';
+import { readdirSync } from 'fs-extra';
+import { readJSONSync } from '../../filesystem';
 import * as path from 'path';
 
 declare global {
@@ -653,7 +655,7 @@ class AssetQueryManager {
                 const missingInfo = database.infoManager?.getMissingInfo(mainUuid);
                 if (missingInfo?.path) {
                     const metaPath = missingInfo.path + '.meta';
-                    if (existsSync(metaPath)) {
+                    if (pathExistsSync(metaPath)) {
                         const metaJson = readJSONSync(metaPath);
                         if (metaJson?.subMetas?.[subId]?.name) {
                             return metaJson.subMetas[subId].name;
@@ -667,7 +669,7 @@ class AssetQueryManager {
             // 遍历资源目录，查找包含该 UUID 的 .meta 文件
             try {
                 const target = assetDBManager.assetDBInfo[name]?.target;
-                if (target && existsSync(target)) {
+                if (target && pathExistsSync(target)) {
                     const result = this._findSubAssetNameFromMeta(target, mainUuid, subId);
                     if (result) return result;
                 }
@@ -837,7 +839,7 @@ class AssetQueryManager {
         const path = queryPath(url);
         if (!path) {
             return '';
-        } else if (!existsSync(path)) {
+        } else if (!pathExistsSync(path)) {
             return url;
         }
         const newPath = utils.File.getName(path);

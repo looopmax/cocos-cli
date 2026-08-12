@@ -4,7 +4,7 @@ import { BundleCompressionTypes } from '../../../../share/bundle-utils';
 import { buildAssetLibrary } from '../../manager/asset-library';
 import { walk } from '../json-group';
 import * as HashUuid from '../../utils/hash-uuid';
-import { outputJSON } from 'fs-extra';
+import { outputJSONAsync as outputJSON } from '../../../../../filesystem';
 import { compareUUID } from '../../../../share/utils';
 import { ImageAsset, js, Texture2D } from 'cc';
 import i18n from '../../../../../base/i18n';

@@ -1,5 +1,5 @@
 import { Asset } from '@cocos/asset-db';
-import { readJSON } from 'fs-extra';
+import { readJSONAsync as readJSON } from '../filesystem';
 
 import assetManager from './manager/asset';
 import type { IAsset } from './@types/protected';

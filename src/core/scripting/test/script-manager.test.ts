@@ -1,3 +1,4 @@
+import { pathExistsSync } from '../../filesystem';
 import scriptManagerDefault, { AssetChangeInfo } from '../index';
 import { PackerDriver } from '../packer-driver';
 import { eventEmitter } from '../event-emitter';
@@ -7,7 +8,7 @@ import { DBChangeType } from '../packer-driver/asset-db-interop';
 import { Engine } from '../../engine';
 import path, { join } from 'path';
 import { TestGlobalEnv } from '../../../tests/global-env';
-import { ensureDirSync, writeFileSync, unlinkSync, existsSync, readdirSync, rmdirSync } from 'fs-extra';
+import { ensureDirSync, writeFileSync, unlinkSync, readdirSync, rmdirSync } from 'fs-extra';
 import { EngineLoader } from 'cc/loader';
 
 const _ProjectRoot = TestGlobalEnv.projectRoot;
@@ -185,7 +186,7 @@ describe('ScriptManager', () => {
     afterAll(() => {
         // Clean up test files
         for (const filePath of testFiles) {
-            if (existsSync(filePath)) {
+            if (pathExistsSync(filePath)) {
                 try {
                     unlinkSync(filePath);
                 } catch (error) {
@@ -196,7 +197,7 @@ describe('ScriptManager', () => {
         testFiles.length = 0;
 
          // If scripts directory is empty, remove it
-         if (existsSync(_ScriptsDir)) {
+         if (pathExistsSync(_ScriptsDir)) {
             try {
                 const files = readdirSync(_ScriptsDir);
                 if (files.length === 0) {

@@ -2918,7 +2918,8 @@ export async function readGltf(gltfFilePath: string): Promise<ParsedAndBufferRes
 }
 
 async function readGltfJson(path: string): Promise<ParsedAndBufferResolvedGlTf> {
-    const glTF = (await fs.readJSON(path)) as GlTf;
+    const { readJSONAsync } = await import('../../../../filesystem');
+    const glTF = (await readJSONAsync(path)) as GlTf;
     const resolvedBuffers = !glTF.buffers
         ? []
         : glTF.buffers.map((glTFBuffer: any) => {

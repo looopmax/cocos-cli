@@ -1,5 +1,7 @@
+import { pathExistsSync } from '../../filesystem';
 import { Importer as AssetDBImporter, Asset, setDefaultUserData, get } from '@cocos/asset-db';
-import { existsSync, outputJSON } from 'fs-extra';
+
+import { outputJSONAsync as outputJSON } from '../../filesystem';
 import { basename, extname, isAbsolute, join } from 'path';
 import { url2path } from '../utils';
 import lodash from 'lodash';
@@ -381,7 +383,7 @@ class AssetHandlerManager {
      */
     async createAssetTemplate(importer: string, templatePath: string, target: string): Promise<boolean> {
         templatePath = isAbsolute(templatePath) ? templatePath : url2path(templatePath);
-        if (!templatePath || !existsSync(templatePath)) {
+        if (!templatePath || !pathExistsSync(templatePath)) {
             return false;
         }
         const assetTemplateDir = getUserTemplateDir(importer);
@@ -416,7 +418,7 @@ class AssetHandlerManager {
             // 如果给定了模板信息，使用 db 默认的创建拷贝方式
             if (options.template) {
                 const path = url2path(options.template);
-                if (existsSync(path)) {
+                if (pathExistsSync(path)) {
                     await copyPath(path, options.target, { overwrite: options.overwrite });
                     await afterCreateAsset(options.target, options);
                     return options.target;
@@ -792,7 +794,7 @@ function patchHandler(info: ICreateMenuInfo, handler: string, extensions: string
 
 async function queryUserTemplates(templateDir: string) {
     try {
-        if (existsSync(templateDir)) {
+        if (pathExistsSync(templateDir)) {
             return (await fg(['**/*', '!*.meta'], {
                 onlyFiles: true,
                 cwd: templateDir,
@@ -820,7 +822,7 @@ async function afterCreateAsset(paths: string | string[], options: CreateAssetOp
     }
     for (const file of paths) {
         // 文件不存在，nodejs 没有成功创建文件
-        if (!existsSync(file)) {
+        if (!pathExistsSync(file)) {
             throw new Error(`${i18n.t('assets.create_asset.fail.drop', {
                 target: file,
             })}`);

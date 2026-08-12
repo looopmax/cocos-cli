@@ -1,6 +1,7 @@
+import { pathExistsSync } from '../core/filesystem';
 import express, { Express } from 'express';
 import compression from 'compression';
-import { existsSync, readFileSync } from 'fs-extra';
+import { readFileSync } from 'fs-extra';
 import { createServer as createHTTPServer, Server as HTTPServer } from 'http';
 import { createServer as createHTTPSServer, Server as HTTPSServer } from 'https';
 import { getAvailablePort } from './utils';
@@ -100,13 +101,13 @@ export class ServerService {
                 cert: undefined,
                 ca: undefined,
             };
-            if (existsSync(keyFile)) {
+            if (pathExistsSync(keyFile)) {
                 options.key = readFileSync(path.resolve(keyFile));
             }
-            if (existsSync(certFile)) {
+            if (pathExistsSync(certFile)) {
                 options.cert = readFileSync(certFile);
             }
-            if (caFile && existsSync(caFile)) {
+            if (caFile && pathExistsSync(caFile)) {
                 options.ca = readFileSync(caFile);
             }
             server = createHTTPSServer(options, requestHandler);

@@ -83,7 +83,8 @@ export function createFbxConverter(options: {
             if (await pathExists(logFile)) {
                 let logs: IFbxGlTfConvLog | undefined;
                 try {
-                    logs = await fs.readJson(logFile);
+                    const { readJSONAsync } = await import('../../../../filesystem');
+                    logs = await readJSONAsync(logFile);
                 } catch {
                     console.debug('No logs are generated, it should not happen indeed.');
                 }

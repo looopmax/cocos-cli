@@ -1,7 +1,9 @@
+import { pathExistsSync } from '../../../../filesystem';
 'use strict';
 
 import { join } from 'path';
-import { existsSync, readJSON, readFile, writeFile } from 'fs-extra';
+import { readFile, writeFile } from 'fs-extra';
+import { readJSONAsync as readJSON } from '../../../../filesystem';
 
 /**
  * 修改 android 的包名
@@ -10,7 +12,7 @@ import { existsSync, readJSON, readFile, writeFile } from 'fs-extra';
  */
 export async function changePackageName(projectPath: string, packageName: string) {
     const projectJSONPath = join(projectPath, '.cocos-project.json');
-    if (!existsSync(projectJSONPath)) {
+    if (!pathExistsSync(projectJSONPath)) {
         console.error(`Can't find project json [${projectJSONPath}]`);
         return;
     }
@@ -35,7 +37,7 @@ export async function changePackageName(projectPath: string, packageName: string
     }
 
     const templateJsonPath = join(projectPath, 'cocos-project-template.json');
-    if (!existsSync(templateJsonPath)) {
+    if (!pathExistsSync(templateJsonPath)) {
         console.error(`Can't find template json [${templateJsonPath}]`);
         return;
     }
@@ -48,7 +50,7 @@ export async function changePackageName(projectPath: string, packageName: string
         files = nativeSupport.project_replace_mac_bundleid.files;
         for (const file of files) {
             const path = join(projectPath, file);
-            if (!existsSync(path)) {
+            if (!pathExistsSync(path)) {
                 console.error(`Can't not find file [${file}], replace package name failed`);
                 continue;
             }

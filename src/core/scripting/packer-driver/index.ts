@@ -1,6 +1,8 @@
+import { readFileUtf8Sync } from '../../filesystem';
 
 import ps from 'path';
 import fs from 'fs-extra';
+import { pathExistsAsync, readJSONAsync } from '../../filesystem';
 import { fileURLToPath, pathToFileURL, URL } from 'url';
 import { performance } from 'perf_hooks';
 import { makePrerequisiteImportsMod, makeTentativePrerequisiteImports, prerequisiteImportsModURL } from './prerequisite-imports';
@@ -109,7 +111,7 @@ export class PackerDriver {
         const targets: PackerDriver['_targets'] = {};
 
         const verbose = true;
-        if (await fs.pathExists(debugLogFile)) {
+        if (await pathExistsAsync(debugLogFile)) {
             try {
                 await fs.unlink(debugLogFile);
             } catch (err) {
@@ -246,7 +248,7 @@ export class PackerDriver {
 
     public static queryCCEModuleMap(): CCEModuleMap {
         const cceModuleMapLocation = ps.join(__dirname, '../../../../static/scripting/cce-module.jsonc');
-        const cceModuleMap = JSON5.parse(fs.readFileSync(cceModuleMapLocation, 'utf8')) as CCEModuleMap;
+        const cceModuleMap = JSON5.parse(readFileUtf8Sync(cceModuleMapLocation)) as CCEModuleMap;
         cceModuleMap.mapLocation = cceModuleMapLocation;
         return cceModuleMap;
     }
@@ -576,7 +578,7 @@ export class PackerDriver {
     ): Promise<boolean> {
         let matched = false;
         try {
-            const oldRecord: IncrementalRecord = await fs.readJson(recordFile);
+            const oldRecord: IncrementalRecord = await readJSONAsync(recordFile);
             matched = matchObject(record, oldRecord);
             if (matched) {
                 logger.debug('Incremental file seems great.');

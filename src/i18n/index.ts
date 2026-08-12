@@ -1,3 +1,4 @@
+import { readFileUtf8Sync } from '../core/filesystem';
 import i18n from 'i18next';
 import fs from 'fs';
 import path from 'path';
@@ -14,7 +15,7 @@ function loadLanguageResources(language: string): Record<string, any> {
 
             for (const file of jsonFiles) {
                 const filePath = path.join(localesDir, file);
-                const data = fs.readFileSync(filePath, 'utf8');
+                const data = readFileUtf8Sync(filePath);
                 const parsed = JSON.parse(data);
 
                 // 将文件名（去掉.json）作为前缀，合并到扁平结构中

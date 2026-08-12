@@ -1,6 +1,8 @@
+import { pathExistsSync } from '../core/filesystem';
 import chalk from 'chalk';
 import { BaseCommand } from './base';
-import { existsSync, readJSONSync } from 'fs-extra';
+
+import { readJSONSync } from '../core/filesystem';
 
 
 /**
@@ -42,7 +44,7 @@ export class PreviewCommand extends BaseCommand {
                     } else if (options.build) {
                         let buildOptions: Record<string, any> = {};
                         if (options.buildConfig) {
-                            if (!existsSync(options.buildConfig)) {
+                            if (!pathExistsSync(options.buildConfig)) {
                                 console.error(chalk.red(`Error: Build config does not exist: ${options.buildConfig}`));
                                 process.exit(1);
                             }

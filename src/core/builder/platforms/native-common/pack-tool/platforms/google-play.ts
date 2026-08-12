@@ -1,3 +1,4 @@
+import { readFileUtf8Sync, writeFileUtf8Sync } from '../../../../../filesystem';
 import * as fs from 'fs-extra';
 import * as ps from 'path';
 import { cchelper } from '../utils';
@@ -376,7 +377,7 @@ export default class GooglePlayPackTool extends NativePackTool {
                 apiLevel = DefaultAPILevel;
             }
             console.log(`AndroidAPI level ${apiLevel}`);
-            let content = fs.readFileSync(gradlePropertyPath, 'utf-8');
+            let content = readFileUtf8Sync(gradlePropertyPath);
             if (keystorePath) {
                 content = content.replace(/.*RELEASE_STORE_FILE=.*/, `RELEASE_STORE_FILE=${keystorePath}`);
                 content = content.replace(/.*RELEASE_STORE_PASSWORD=.*/, `RELEASE_STORE_PASSWORD=${options.keystorePassword}`);
@@ -411,7 +412,7 @@ export default class GooglePlayPackTool extends NativePackTool {
 
             const ndkPropertiesPath = cchelper.join(options.ndkPath, 'source.properties');
             if (fs.existsSync(ndkPropertiesPath)) {
-                const ndkContent = fs.readFileSync(ndkPropertiesPath, 'utf-8');
+                const ndkContent = readFileUtf8Sync(ndkPropertiesPath);
                 const regexp = new RegExp(`Pkg.Revision = (.*)`);
                 const r = ndkContent.match(regexp);
                 if (r) {
@@ -426,7 +427,7 @@ export default class GooglePlayPackTool extends NativePackTool {
             const abis = (options.appABIs && options.appABIs.length > 0) ? options.appABIs.join(':') : 'armeabi-v7a';
             // todo:新的template里面有个注释也是这个字段，所以要加个g
             content = content.replace(/PROP_APP_ABI=.*/g, `PROP_APP_ABI=${abis}`);
-            fs.writeFileSync(gradlePropertyPath, content);
+            writeFileUtf8Sync(gradlePropertyPath, content);
 
             // generate local.properties
             content = '';
@@ -437,7 +438,7 @@ export default class GooglePlayPackTool extends NativePackTool {
                 content = content.replace(/:/g, '\\:');
             }
 
-            fs.writeFileSync(cchelper.join(ps.dirname(gradlePropertyPath), 'local.properties'), content, { encoding: 'utf8' });
+            writeFileUtf8Sync(cchelper.join(ps.dirname(gradlePropertyPath), 'local.properties'), content);
         } else {
             console.log(`warning: ${gradlePropertyPath} not found!`);
         }
@@ -463,7 +464,7 @@ export default class GooglePlayPackTool extends NativePackTool {
         if (!urlInfo.host) {
             throw new Error(`parse url ${url} fail`);
         }
-        let manifest = fs.readFileSync(manifestPath, 'utf8');
+        let manifest = readFileUtf8Sync(manifestPath);
         manifest = manifest.replace(/<category\s*android:name="android.intent.category.DEFAULT"\s*\/>/, (str) => {
             let newStr = '<category android:name="android.intent.category.DEFAULT" />';
             newStr += `\n                <data android:host="${urlInfo.host}" android:pathPattern="${urlInfo.path}" android:scheme="https"/>`
@@ -471,12 +472,12 @@ export default class GooglePlayPackTool extends NativePackTool {
             return newStr;
         });
 
-        fs.writeFileSync(manifestPath, manifest, 'utf8');
+        writeFileUtf8Sync(manifestPath, manifest);
     }
 
     private async generateAppNameValues() {
         const valuesPath = cchelper.join(this.paths.platformTemplateDirInPrj, 'res/values/strings.xml');
-        const matchCnt = fs.readFileSync(valuesPath, 'utf8').toString().split('\n').map(x => x.trim()).filter(x => /name=\"app_name\"/.test(x)).length;
+        const matchCnt = readFileUtf8Sync(valuesPath).toString().split('\n').map(x => x.trim()).filter(x => /name=\"app_name\"/.test(x)).length;
         if (matchCnt == 0) { // should generate
             const content = [
                 `<resources>`,
@@ -485,7 +486,7 @@ export default class GooglePlayPackTool extends NativePackTool {
             ];
             const dir = ps.join(this.paths.buildDir, 'proj/res/values');
             await fs.ensureDir(dir);
-            await fs.writeFileSync(ps.join(dir, `strings.xml`), content.join('\n'), 'utf8');
+            writeFileUtf8Sync(ps.join(dir, `strings.xml`), content.join('\n'));
         }
     }
 

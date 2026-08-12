@@ -1,6 +1,7 @@
+import { readFileUtf8Sync } from '../core/filesystem';
 import { Command } from 'commander';
 import { join, resolve } from 'path';
-import { existsSync, readFileSync } from 'fs';
+import { existsSync } from 'fs';
 import chalk from 'chalk';
 
 /**
@@ -43,7 +44,7 @@ export abstract class BaseCommand {
         const configPath = resolve('config.local.json');
         if (!existsSync(configPath)) return undefined;
         try {
-            const config = JSON.parse(readFileSync(configPath, 'utf-8'));
+            const config = JSON.parse(readFileUtf8Sync(configPath));
             return config.project;
         } catch {
             console.warn(chalk.yellow('Warning: Failed to parse config.local.json'));

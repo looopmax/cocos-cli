@@ -1,4 +1,5 @@
-import { readFileSync, remove, outputFile, rename, readFile } from 'fs-extra';
+import { readFileUtf8Sync } from '../../../../../filesystem';
+import { remove, outputFile, rename, readFile } from 'fs-extra';
 import { dirname, basename, join, extname, resolve } from 'path';
 import { calcMd5, patchMd5ToPath } from '../../utils';
 import minimatch from 'minimatch';
@@ -119,7 +120,7 @@ export class md5CacheHandler {
      * @returns 
      */
     async addMd5ToPath(path: string, code?: string) {
-        const cryptoHash = calcMd5(code || readFileSync(path, 'utf-8'));
+        const cryptoHash = calcMd5(code || readFileUtf8Sync(path));
         const newPath = patchMd5ToPath(path, cryptoHash);
         if (code) {
             await remove(path);
@@ -260,7 +261,7 @@ export class md5CacheHandler {
         }
         // TODO 压缩混淆后的文件不做处理
 
-        const code = readFileSync(path, 'utf-8');
+        const code = readFileUtf8Sync(path);
         // 匹配代码内的引用地址信息
         const relativePathRegex = /(?:'|\")([^\s'"]+)(?:'|\")/g;
         let matches: RegExpMatchArray[] = [];

@@ -1,7 +1,7 @@
 'use strict';
 
 import { Asset, queryAsset, queryPath, VirtualAsset } from '@cocos/asset-db';
-import { outputJSON, outputJSONSync, readJSON, readJSONSync, writeJSONSync } from 'fs-extra';
+import { outputJSONAsync as outputJSON, outputJSONSync, readJSONAsync as readJSON, readJSONSync } from '../../../filesystem';
 import { upgradeProperties } from './utils/material-upgrader';
 
 import { getDependUUIDList } from '../utils';
@@ -60,7 +60,7 @@ export const MaterialHandler: AssetHandler = {
 
                 // upgrade properties
                 if (await upgradeProperties(material, asset)) {
-                    writeJSONSync(asset.source, material, { spaces: 2 });
+                    outputJSONSync(asset.source, material, { spaces: 2 });
                 }
                 material._name = asset.basename || '';
                 const serializeJSON = JSON.stringify(material, undefined, 2);

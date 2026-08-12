@@ -1,5 +1,6 @@
+import { readFileUtf8Sync } from '../../filesystem';
 import { join } from 'path';
-import { existsSync, readFileSync } from 'fs';
+import { existsSync } from 'fs';
 
 /**
  * Editor.Profile 的 CLI 实现：按 Cocos Creator 的磁盘约定读取扩展配置。
@@ -24,7 +25,7 @@ export class ProfileStore {
             return {};
         }
         try {
-            return JSON.parse(readFileSync(file, 'utf8')) ?? {};
+            return JSON.parse(readFileUtf8Sync(file)) ?? {};
         } catch {
             return {};
         }

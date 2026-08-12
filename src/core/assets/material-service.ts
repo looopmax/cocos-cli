@@ -2,7 +2,7 @@
 
 declare const cc: any;
 
-import { pathExists, readJSON } from 'fs-extra';
+import { pathExistsAsync as pathExists, readJSONAsync as readJSON } from '../filesystem';
 import type { EffectAsset } from 'cc';
 import type { IAsset } from './@types/protected';
 import type { IAssetInfo, IProperty } from './@types/public';

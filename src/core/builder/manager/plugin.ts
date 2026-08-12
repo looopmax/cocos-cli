@@ -19,7 +19,8 @@ import { convertConfigItem, ICocosConfigurationPropertySchema } from '../../conf
 import { GlobalPaths } from '../../../global';
 import { existsSync, readdirSync } from 'fs';
 import utils from '../../base/utils';
-import { copy, outputJSON, readJSON, readJSONSync } from 'fs-extra';
+import { copy } from 'fs-extra';
+import { outputJSONAsync as outputJSON, readJSONAsync as readJSON, readJSONSync } from '../../filesystem';
 
 export interface InternalPackageInfo {
     name: string; // 插件名

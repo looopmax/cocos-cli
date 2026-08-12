@@ -1,9 +1,12 @@
+import { pathExistsSync } from '../../../../filesystem';
 'use strict';
 
-import { existsSync, outputJSON, unlinkSync, readFileSync, outputFileSync, rm, statSync, pathExists } from 'fs-extra';
+import { readFileUtf8Sync, writeFileUtf8Sync } from '../../../../filesystem';
+import { unlinkSync, outputFileSync, rm, statSync } from 'fs-extra';
+import { outputJSONAsync as outputJSON, pathExistsAsync as pathExists } from '../../../../filesystem';
 import { IBuildResult, IHarmonyOSNextInternalBuildOptions } from './type';
 import { BuilderCache, IBuilder } from '../../../@types/protected';
-import { emptyDir, copy, moveSync, ensureDir, writeFileSync, readdirSync } from 'fs-extra';
+import { emptyDir, copy, moveSync, ensureDir, readdirSync } from 'fs-extra';
 import { basename, relative, join, dirname } from 'path';
 import * as nativeCommonHook from '../../native-common/hooks';
 import { generateOptions } from './utils';
@@ -89,7 +92,7 @@ export async function onAfterBuild(this: IBuilder, options: IHarmonyOSNextIntern
     const { useAotOptimization } = options.packages['harmonyos-next'];
     if (options.packages['harmonyos-next'].jsEngine === 'ARK') {
         // 转化 settings.json 为 SystemJS 模块的 settings.js
-        let settingsCode = readFileSync(result.paths.settings, 'utf8');
+        let settingsCode = readFileUtf8Sync(result.paths.settings);
         settingsCode = 'export default ' + settingsCode;
         const systemSettingsCode = await transformCode(settingsCode, {
             importMapFormat: 'systemjs',
@@ -135,7 +138,7 @@ export async function onAfterBuild(this: IBuilder, options: IHarmonyOSNextIntern
 
         // 删除之前遗留的application.js
         const applicationJS = join(mainDir, 'ets/cocos', basename(result.paths.applicationJS));
-        if (existsSync(applicationJS)) {
+        if (pathExistsSync(applicationJS)) {
             await rm(applicationJS, { force: true, recursive: true }); // 我们需要移除原来的 assets，否则会导致 DevEco 编译报错
         }
         // 拷贝 application.js
@@ -158,13 +161,13 @@ export async function onAfterBuild(this: IBuilder, options: IHarmonyOSNextIntern
             moveSync(join(targetAssetDir, bundle.name, 'index.js.map'), join(mainDir, 'ets/cocos/assets', bundle.name, 'index.js.map'));
         });
         // 拷贝引擎资源 entry/src/main/ets/cocos/src/cocos-js/assets
-        if (existsSync(engineAssetDir)) {
+        if (pathExistsSync(engineAssetDir)) {
             await ensureDir(targetEngineAssetDir);
             await emptyDir(targetEngineAssetDir);
             await copy(engineAssetDir, targetEngineAssetDir);
             await rm(engineAssetDir, { force: true, recursive: true }); // 我们需要移除原来的 assets，否则会导致 DevEco 编译报错
         }
-        if (existsSync(effectBin)) {
+        if (pathExistsSync(effectBin)) {
             await copy(effectBin, targetEffectBin);
         }
     }
@@ -203,17 +206,17 @@ export async function onAfterBuild(this: IBuilder, options: IHarmonyOSNextIntern
             chunkBundleUrl: '',
             useAotOptimization,
         };
-        if (existsSync(join(result.paths.dir, 'src/chunks'))) {
+        if (pathExistsSync(join(result.paths.dir, 'src/chunks'))) {
             const chunkBundleUrl: string = (readdirSync(join(result.paths.dir, 'src/chunks'))).find((item) => item.startsWith('bundle') && item.endsWith('.js'))!;
             if (chunkBundleUrl) {
                 gameJsRenderConfig.chunkBundleUrl = chunkBundleUrl;
             }
         }
-        writeFileSync(gameDest, await Ejs.renderFile(gameEjs, gameJsRenderConfig), 'utf8');
+        writeFileUtf8Sync(gameDest, await Ejs.renderFile(gameEjs, gameJsRenderConfig));
     } else {
         // 删除game.ts
         const gameDest = join(mainDir, 'ets/cocos/game.ts');
-        if (existsSync(gameDest)) {
+        if (pathExistsSync(gameDest)) {
             await rm(gameDest, { force: true, recursive: true });
         }
     }
@@ -224,10 +227,10 @@ export async function onAfterBuild(this: IBuilder, options: IHarmonyOSNextIntern
     const cocosWorkerJsRenderConfig: Record<string, any> = {
         useV8,
     };
-    writeFileSync(cocosWorkerDest, await Ejs.renderFile(cocosWorkerEjs, cocosWorkerJsRenderConfig), 'utf8');
+    writeFileUtf8Sync(cocosWorkerDest, await Ejs.renderFile(cocosWorkerEjs, cocosWorkerJsRenderConfig));
 
     // 修改 build-profile.json5 里的 compileMode
     const buildProfilePath = join(entryDir, 'build-profile.json5');
-    const buildProfile = JSON5.parse(readFileSync(buildProfilePath, 'utf8'));
-    writeFileSync(buildProfilePath, JSON5.stringify(buildProfile, null, 2), 'utf8');
+    const buildProfile = JSON5.parse(readFileUtf8Sync(buildProfilePath));
+    writeFileUtf8Sync(buildProfilePath, JSON5.stringify(buildProfile, null, 2));
 }

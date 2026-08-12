@@ -1,10 +1,12 @@
+import { pathExistsSync } from '../../../../../filesystem';
 'use strict';
 /**
  * 此文件需要在独立 node 进程里可调用，不可使用 Editor/Electron 接口
  * 引擎分离编译后，默认会生成一份包含全部引擎散文件的目录结构，默认名称为 all
  * 如果指定了 pluginFeatures 则会为其 pick 出一份插件目录
  */
-import { writeJSONSync, existsSync, readFileSync, writeFileSync, readJSONSync, emptyDirSync, ensureDirSync, copyFileSync, outputJSONSync, copySync, outputJSON, copy, outputFile } from 'fs-extra';
+import { readFileSync, writeFileSync, emptyDirSync, ensureDirSync, copyFileSync, copySync, copy, outputFile } from 'fs-extra';
+import { outputJSONAsync as outputJSON, outputJSONSync, readJSONSync } from '../../../../../filesystem';
 import { join, basename, dirname, relative } from 'path';
 import { createHash } from 'crypto';
 import { buildEngine, StatsQuery } from '@cocos/ccbuild';
@@ -324,7 +326,7 @@ class EngineFeatureUnitGenerator {
             main: 'base.js',
         });
         // 更新 metaInfo 数据
-        updateMeta && await writeJSONSync(enginePaths.meta, metaInfo, { spaces: 2 });
+        updateMeta && outputJSONSync(enginePaths.meta, metaInfo, { spaces: 2 });
         return signature;
     }
 }
@@ -349,7 +351,7 @@ export async function buildSeparateEngine(options: IBuildSeparateEngineOptions):
 export async function buildCocos(options: IBuildSeparateEngineCacheOptions): Promise<EngineCachePaths> {
     const outDir = join(options.engine, `bin/.cache/editor-cache/${options.platform}`);
     const enginePaths = new EngineCachePaths(outDir, options.pluginName);
-    if (options.useCacheForce && existsSync(enginePaths.plugin)) {
+    if (options.useCacheForce && pathExistsSync(enginePaths.plugin)) {
         // 目前暂未检查完整的缓存是否有效
         return enginePaths;
     }
@@ -377,7 +379,7 @@ export async function buildCocos(options: IBuildSeparateEngineCacheOptions): Pro
     };
 
     const cacheOptionsPath = join(outDir, 'options.json');
-    if (existsSync(cacheOptionsPath)) {
+    if (pathExistsSync(cacheOptionsPath)) {
         const cacheOptions = readJSONSync(cacheOptionsPath);
         if (compareOptions(cacheOptions, buildOptions)) {
             console.log(`use cache engine in ${enginePaths.dir}`);
@@ -401,7 +403,7 @@ export async function buildCocos(options: IBuildSeparateEngineCacheOptions): Pro
         }),
     );
     // 缓存一下引擎提供的模块映射
-    await writeJSONSync(enginePaths.meta, Object.assign(buildResult, { md5Map }), { spaces: 2 });
+    outputJSONSync(enginePaths.meta, Object.assign(buildResult, { md5Map }), { spaces: 2 });
 
     // 整理出可供上传的引擎插件内容
     if (engineFeatureQuery.plugin.length) {
@@ -460,7 +462,7 @@ async function generatePlugins(enginePaths: EngineCachePaths, featureFiles: stri
         main: 'base.js',
     });
     // 更新 metaInfo 数据
-    updateMeta && await writeJSONSync(enginePaths.meta, metaInfo, { spaces: 2 });
+    updateMeta && outputJSONSync(enginePaths.meta, metaInfo, { spaces: 2 });
     return signature;
 }
 

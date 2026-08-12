@@ -2,7 +2,7 @@
 
 import { IBaseNode, IObjectRef } from './defines';
 import { queryAsset } from '@cocos/asset-db';
-import { readJSON, readJSONSync } from 'fs-extra';
+import { readJSONAsync as readJSON, readJSONSync } from '../../../../filesystem';
 import { existsSync } from 'fs';
 
 /**

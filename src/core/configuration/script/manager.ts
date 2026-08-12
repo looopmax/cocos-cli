@@ -8,6 +8,7 @@ import { CocosMigrationManager } from '../migration';
 import { configurationRegistry } from './registry';
 import { IBaseConfiguration } from './config';
 import EventEmitter from 'events';
+import { outputJSONAsync, pathExistsAsync, readJSONAsync } from '../../filesystem';
 
 export interface IConfigurationManager {
     /**
@@ -387,8 +388,8 @@ export class ConfigurationManager extends EventEmitter implements IConfiguration
         // project(committed): settings/cocos.config.json; legacy root config is relocated once and then removed.
         let localConfigLoaded = false;
         try {
-            if (await fse.pathExists(this.configPath)) {
-                this.projectConfig = await fse.readJSON(this.configPath);
+            if (await pathExistsAsync(this.configPath)) {
+                this.projectConfig = await readJSONAsync(this.configPath);
                 this.projectConfig.version && (this.version = this.projectConfig.version);
                 newConsole.debug(`[Configuration] 已加载项目配置: ${this.configPath}`);
             } else {
@@ -397,7 +398,7 @@ export class ConfigurationManager extends EventEmitter implements IConfiguration
             }
 
             const legacyPath = path.join(this.projectPath, ConfigurationManager.name);
-            if (await fse.pathExists(legacyPath)) {
+            if (await pathExistsAsync(legacyPath)) {
                 this.localConfig = await this.readLocalConfig();
                 localConfigLoaded = true;
                 await this.relocateLegacyRootConfig(legacyPath);
@@ -415,8 +416,8 @@ export class ConfigurationManager extends EventEmitter implements IConfiguration
 
     private async readLocalConfig(): Promise<IConfiguration> {
         try {
-            return await fse.pathExists(this.localConfigPath)
-                ? await fse.readJSON(this.localConfigPath)
+            return await pathExistsAsync(this.localConfigPath)
+                ? await readJSONAsync(this.localConfigPath)
                 : {};
         } catch (error) {
             newConsole.error(`[Configuration] 加载 local 配置失败: ${this.localConfigPath} - ${error}`);
@@ -425,7 +426,7 @@ export class ConfigurationManager extends EventEmitter implements IConfiguration
     }
 
     private async relocateLegacyRootConfig(legacyPath: string): Promise<void> {
-        const legacyConfig = await fse.readJSON(legacyPath);
+        const legacyConfig = await readJSONAsync(legacyPath);
         const { project, local } = this.splitLegacyConfigScopes(legacyConfig);
         this.projectConfig = utils.deepMerge(project, this.projectConfig) as IConfiguration;
         this.localConfig = utils.deepMerge(local, this.localConfig) as IConfiguration;
@@ -502,7 +503,7 @@ export class ConfigurationManager extends EventEmitter implements IConfiguration
                 try {
                     await fse.ensureDir(path.dirname(this.localConfigPath));
                     this.localConfig.version = ConfigurationManager.VERSION;
-                    await fse.writeJSON(this.localConfigPath, this.localConfig, { spaces: 4 });
+                    await outputJSONAsync(this.localConfigPath, this.localConfig, { spaces: 4 });
                     this.emit(MessageType.Save, this.localConfig, 'local');
                     newConsole.debug(`[Configuration] 已保存 local 配置: ${this.localConfigPath}`);
                 } catch (error) {
@@ -530,7 +531,7 @@ export class ConfigurationManager extends EventEmitter implements IConfiguration
         let lastError: unknown;
         for (let attempt = 1; attempt <= maxAttempts; attempt++) {
             try {
-                await fse.writeJSON(tmpPath, this.projectConfig, { spaces: 4 });
+                await outputJSONAsync(tmpPath, this.projectConfig, { spaces: 4 });
                 await fse.move(tmpPath, this.configPath, { overwrite: true });
                 return;
             } catch (error) {

@@ -1,4 +1,6 @@
-import { existsSync, readFileSync, statSync, writeFile } from 'fs-extra';
+import { pathExistsSync } from '../../filesystem';
+import { readFileUtf8Sync } from '../../filesystem';
+import { statSync, writeFile } from 'fs-extra';
 import { extname } from 'path';
 import ts, { CompilerOptions, IScriptSnapshot, LanguageServiceHost, ParseConfigFileHost } from 'typescript';
 import { DbURLInfo } from '../intelligence';
@@ -32,7 +34,7 @@ export class VirtualIOAdapter {
             content = cache.content;
         } else {
             try {
-                content = readFileSync(filePath, 'utf8');
+                content = readFileUtf8Sync(filePath);
                 const info = this._fileCache.get(filePath);
                 asserts(info);
                 const nowMtimeMs = statSync(filePath).mtimeMs;
@@ -57,7 +59,7 @@ export class VirtualIOAdapter {
         this._fileCache.set(filePath, { filePath, uuid, content, version });
     }
     fileExists(path: string): boolean {
-        return existsSync(path);
+        return pathExistsSync(path);
     }
     getFileNames() {
         return Array.from(tsScriptAssetCache.keys());

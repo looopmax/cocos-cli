@@ -1,3 +1,4 @@
+import { readFileUtf8Sync } from '../../../../filesystem';
 import * as ps from 'path';
 import * as fs from 'fs-extra';
 import { execSync, spawn } from 'child_process';
@@ -302,7 +303,7 @@ export class cchelper {
             console.error(`file ${filename} not exist!`);
             return;
         }
-        const lines = fs.readFileSync(filename).toString('utf-8').split('\n');
+        const lines = readFileUtf8Sync(filename).split('\n');
         for (const l of lines) {
             const r = l.match(regexp);
             if (r) {

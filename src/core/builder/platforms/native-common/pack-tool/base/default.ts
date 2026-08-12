@@ -1,3 +1,4 @@
+import { outputJSONAsync, outputJSONSync, pathExistsSync, readFileUtf8Sync, readJSONAsync, readJSONSync } from '../../../../../filesystem';
 import * as ps from 'path';
 import * as fs from 'fs-extra';
 import { cchelper, Paths } from '../utils';
@@ -101,7 +102,7 @@ export default abstract class NativePackTool {
             return null;
         }
         try {
-            const content = fs.readJsonSync(versionJsonPath);
+            const content = readJSONSync<any>(versionJsonPath);
             if (content.version === undefined) {
                 console.error(`Field 'version' missing in ${versionJsonPath}`);
                 return null;
@@ -123,7 +124,7 @@ export default abstract class NativePackTool {
             console.error(`Failed to read file ${pkgJSON}`);
             return null;
         }
-        return fs.readJsonSync(pkgJSON).version || '3.6.0';
+        return readJSONSync<any>(pkgJSON).version || '3.6.0';
     }
 
     /**
@@ -135,7 +136,7 @@ export default abstract class NativePackTool {
             console.error(`${compInfo} does not exist`);
             return null;
         }
-        const json = fs.readJsonSync(compInfo);
+        const json = readJSONSync<any>(compInfo);
         if (!json.native) {
             console.error(`${compInfo} does not contain "native" field`);
             return null;
@@ -157,8 +158,8 @@ export default abstract class NativePackTool {
         const commonSrc = this.paths.commonDirInCocos;
         const commonDst = this.paths.commonDirInPrj;
         const compFile = (src: string, dst: string): boolean => {
-            const linesSrc: string[] = fs.readFileSync(src).toString('utf8').split('\n').map((line) => line.trim());
-            const linesDst: string[] = fs.readFileSync(dst).toString('utf8').split('\n').map((line) => line.trim());
+            const linesSrc: string[] = readFileUtf8Sync(src).split('\n').map((line) => line.trim());
+            const linesDst: string[] = readFileUtf8Sync(dst).split('\n').map((line) => line.trim());
             return linesSrc.length === linesDst.length && linesSrc.every((line, index) => line === linesDst[index]);
         };
         const compFiles = ['Classes/Game.h', 'Classes/Game.cpp'];
@@ -319,7 +320,7 @@ export default abstract class NativePackTool {
      */
     protected writeEngineVersion() {
         if (!fs.existsSync(this.projEngineVersionPath)) {
-            fs.writeJSON(this.projEngineVersionPath, {
+            void outputJSONAsync(this.projEngineVersionPath, {
                 version: this.tryGetEngineVersion(),
                 skipCheck: false,
             });
@@ -472,12 +473,12 @@ export default abstract class NativePackTool {
             ps.join(this.paths.buildAssetsDir, 'remote/*/cc.config*.json'),
         ]);
         for (const configPath of allBundleConfigs) {
-            const config = await fs.readJSON(configPath);
+            const config = await readJSONAsync(configPath);
 
             // native 加密步骤(2/3)：加密的标志位，需要写入到 bundle 的 config.json 内运行时需要
             const version = configPath.match(/\/cc.config(.*).json/)![1];
             const scriptDest = ps.join(ps.dirname(configPath), `index${version}.js`);
-            let content: any = fs.readFileSync(scriptDest, 'utf8');
+            let content: any = readFileUtf8Sync(scriptDest);
             if (this.params.compressZip) {
                 content = gzipSync(content);
                 content = xxtea.encrypt(content, xxtea.toBytes(this.params.xxteaKey));
@@ -488,7 +489,7 @@ export default abstract class NativePackTool {
             fs.writeFileSync(newScriptDest, content);
 
             config.encrypted = true;
-            fs.writeJSONSync(configPath, config);
+            outputJSONSync(configPath, config);
 
             fs.copySync(scriptDest, ps.join(backupPath, ps.relative(this.paths.buildAssetsDir, scriptDest)));
             fs.removeSync(scriptDest);
@@ -501,7 +502,7 @@ export default abstract class NativePackTool {
      * 解析、执行 cocos-template.json 模板任务
      */
     protected async executeCocosTemplateTask() {
-        const templateTaskMap: Record<string, CocosProjectTasks> = await fs.readJSON(ps.join(this.paths.nativeTemplateDirInCocos, PackageNewConfig));
+        const templateTaskMap: Record<string, CocosProjectTasks> = await readJSONAsync(ps.join(this.paths.nativeTemplateDirInCocos, PackageNewConfig));
         for (const templateTask of Object.values(templateTaskMap)) {
             await this.executeTemplateTask(templateTask);
         }

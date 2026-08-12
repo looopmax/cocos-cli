@@ -1,9 +1,10 @@
+import { pathExistsSync } from '../../../../../filesystem';
 'use strict';
 /**
  * 工具函数，不可引用一些特殊进程的全局变量或者特殊模块
  */
 import { basename, dirname, extname, join } from 'path';
-import { existsSync, ensureDirSync, readFileSync } from 'fs-extra';
+import { ensureDirSync, readFileSync } from 'fs-extra';
 import i18n from '../../../../../base/i18n';
 import { ICompressConfig } from '../../../../@types';
 
@@ -44,7 +45,7 @@ export async function genMipmapFiles(file: string, destDir?: string, forceChange
         height = Math.max(height / 2, 1);
         const dest = join(destDir, 'mipmaps', `${name}@mipmap_${i - 1}${extName}`);
         fileRes.push(dest);
-        if (existsSync(dest)) {
+        if (pathExistsSync(dest)) {
             continue;
         }
         ensureDirSync(dirname(dest));

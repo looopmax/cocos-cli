@@ -1,3 +1,4 @@
+import { readFileUtf8Sync } from '../../../filesystem';
 import { Asset, queryAsset, queryUUID } from '@cocos/asset-db';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -121,7 +122,7 @@ export const SpineHandler: AssetHandler = {
         }
         // TODO - import as a folder named '***.spine'
         let json;
-        const text = fs.readFileSync(assetpath, 'utf8');
+        const text = readFileUtf8Sync(assetpath);
         const fastTest = text.slice(0, 30);
         const maybe =
             fastTest.indexOf('slots') > 0 ||

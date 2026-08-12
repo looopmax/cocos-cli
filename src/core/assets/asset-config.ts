@@ -1,3 +1,4 @@
+import { readFileUtf8Sync } from '../filesystem';
 import { join } from 'path';
 import { existsSync, readdirSync } from 'fs';
 import { AssetDBRegisterInfo } from './@types/private';
@@ -116,7 +117,7 @@ class AssetConfig {
                     const pkgJsonPath = join(extDir, 'package.json');
                     if (!existsSync(pkgJsonPath)) continue;
                     try {
-                        const pkgJson = JSON.parse(require('fs').readFileSync(pkgJsonPath, 'utf8'));
+                        const pkgJson = JSON.parse(readFileUtf8Sync(pkgJsonPath));
                         const mount = pkgJson?.contributions?.['asset-db']?.mount;
                         if (!mount?.path) continue;
                         const mountTarget = join(extDir, mount.path);

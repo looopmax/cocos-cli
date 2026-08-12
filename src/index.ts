@@ -1,3 +1,4 @@
+import { readFileUtf8Sync } from './core/filesystem';
 import { startServer } from './mcp/start-server.js';
 import { serverService } from './server/server.js';
 import * as vscode from 'vscode';
@@ -80,7 +81,7 @@ async function checkIsCocosProject(folderPath: string): Promise<boolean> {
         }
 
         // 读取并解析 package.json
-        const packageJsonContent = fs.readFileSync(packageJsonPath, 'utf8');
+        const packageJsonContent = readFileUtf8Sync(packageJsonPath);
         const packageJson = JSON.parse(packageJsonContent);
 
         // 检查是否有 creator 字段

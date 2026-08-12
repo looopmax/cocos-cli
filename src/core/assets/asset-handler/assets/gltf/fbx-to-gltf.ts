@@ -22,9 +22,9 @@ export async function fbxToGlTf(asset: Asset, assetDB: AssetDB, version: string)
     };
 
     try {
-        if (await fs.pathExists(statusFilePath)) {
+        if (await (await import('../../../../filesystem')).pathExistsAsync(statusFilePath)) {
             const conversionStatus = JSON.parse((await fs.readFile(statusFilePath)).toString()) as ConversionStatus;
-            if (isSameConversionStatus(conversionStatus, expectedStatus) && (await fs.pathExists(destPath))) {
+        if (isSameConversionStatus(conversionStatus, expectedStatus) && (await (await import('../../../../filesystem')).pathExistsAsync(destPath))) {
                 return destPath;
             }
         }
@@ -32,7 +32,7 @@ export async function fbxToGlTf(asset: Asset, assetDB: AssetDB, version: string)
         console.debug(`Failed to get conversion status file ${statusFilePath}`);
     }
 
-    if (await fs.pathExists(tmpDir)) {
+    if (await (await import('../../../../filesystem')).pathExistsAsync(tmpDir)) {
         await fs.emptyDir(tmpDir);
     }
 

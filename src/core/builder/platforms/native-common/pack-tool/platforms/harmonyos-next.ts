@@ -1,12 +1,11 @@
 
+import { outputJSONSync, readFileUtf8Sync, readJSONSync, writeFileUtf8Sync } from '../../../../../filesystem';
 import NativePackTool, { CocosParams } from '../base/default';
 import * as ps from 'path';
 import * as fs from 'fs-extra';
 import { cchelper, Paths } from '../utils';
 import { randomBytes } from 'crypto';
-import { outputJSONSync } from 'fs-extra';
 import * as JSON5 from 'json5';
-import { writeFileSync } from 'fs';
 
 export interface IOrientation {
     landscapeLeft: boolean;
@@ -69,11 +68,11 @@ export default class HarmonyOSNextPackTool extends NativePackTool {
         //write abi
         try {
             const abiFilters = (platformParams.appABIs && platformParams.appABIs.length > 0) ? platformParams.appABIs : ['armeabi-v7a'];
-            const buildCfgContent = fs.readFileSync(buildCfgFile);
-            const buildCfgJson = JSON5.parse(buildCfgContent.toString());
+            const buildCfgContent = readFileUtf8Sync(buildCfgFile);
+            const buildCfgJson = JSON5.parse(buildCfgContent);
             buildCfgJson.buildOption.externalNativeOptions.abiFilters = abiFilters;
 
-            fs.writeFileSync(buildCfgFile, JSON5.stringify(buildCfgJson, null, 2));
+            writeFileUtf8Sync(buildCfgFile, JSON5.stringify(buildCfgJson, null, 2));
         } catch (e) {
             console.log(`rewrite buildCfgJson err: ${e}`);
         }
@@ -133,19 +132,19 @@ export default class HarmonyOSNextPackTool extends NativePackTool {
         outputJSONSync(cfgFile, configJSON, { spaces: 2 });
 
         const appScopeStringJSONPath = ps.join(ohosProjDir, 'AppScope/resources/base/element/string.json');
-        const appScopeStringJSON = fs.readJSONSync(appScopeStringJSONPath);
+        const appScopeStringJSON = readJSONSync<any>(appScopeStringJSONPath);
         appScopeStringJSON.string.find((item: any) => item.name === 'app_name').value = this.params.projectName;
         outputJSONSync(appScopeStringJSONPath, appScopeStringJSON, { spaces: 2 });
 
         const stringJSONPath = ps.join(ohosProjDir, 'entry/src/main/resources/base/element/string.json');
-        const stringJSON = fs.readJSONSync(stringJSONPath);
+        const stringJSON = readJSONSync<any>(stringJSONPath);
         stringJSON.string.find((item: any) => item.name === 'MainAbility_label').value = this.params.projectName;
         outputJSONSync(stringJSONPath, stringJSON, { spaces: 2 });
 
         const packageJsonPath = ps.join(ohosProjDir, 'oh-package.json5');
         const packageJson = this.readJSON5Sync(packageJsonPath);
         packageJson.name = this.params.projectName;
-        writeFileSync(packageJsonPath, JSON5.stringify(packageJson, null, 4));
+        writeFileUtf8Sync(packageJsonPath, JSON5.stringify(packageJson, null, 4));
         
         await this.encryptScripts();
         return true;
@@ -227,8 +226,8 @@ export default class HarmonyOSNextPackTool extends NativePackTool {
     }
 
     private readJSON5Sync(json5FilePath: string): any {
-        const json5FileContent = fs.readFileSync(json5FilePath);
-        return JSON5.parse(json5FileContent.toString());
+        const json5FileContent = readFileUtf8Sync(json5FilePath);
+        return JSON5.parse(json5FileContent);
     }
 
     private selectHapFile(projectDir: string): string {

@@ -1,7 +1,9 @@
+import { pathExistsSync } from '../../../../filesystem';
 'use strict';
 
 import { join, normalize } from 'path';
-import { existsSync, readFile, writeFile, readJSON, rename } from 'fs-extra';
+import { readFile, writeFile, rename } from 'fs-extra';
+import { readJSONAsync as readJSON } from '../../../../filesystem';
 import { execSync } from 'child_process';
 import { ITaskOption } from '../../native-common/type';
 import { IOptions } from './type'
@@ -15,7 +17,7 @@ import i18n from '../../../../base/i18n';
  */
 export async function changePackageName(projectPath: string, packageName: string) {
     const projectJSONPath = join(projectPath, '.cocos-project.json');
-    if (!existsSync(projectJSONPath)) {
+    if (!pathExistsSync(projectJSONPath)) {
         console.error(`Can't find project json [${projectJSONPath}]`);
         return;
     }
@@ -40,7 +42,7 @@ export async function changePackageName(projectPath: string, packageName: string
     }
 
     const templateJsonPath = join(projectPath, 'cocos-project-template.json');
-    if (!existsSync(templateJsonPath)) {
+    if (!pathExistsSync(templateJsonPath)) {
         console.error(`Can't find template json [${templateJsonPath}]`);
         return;
     }
@@ -53,7 +55,7 @@ export async function changePackageName(projectPath: string, packageName: string
         files = nativeSupport.project_replace_ios_bundleid.files;
         for (const file of files) {
             const path = join(projectPath, file);
-            if (!existsSync(path)) {
+            if (!pathExistsSync(path)) {
                 console.error(`Can't not find file [${file}], replace package name failed`);
                 continue;
             }
@@ -101,7 +103,7 @@ export async function updateXcodeproject(projectPath: string, options: ITaskOpti
     const template = (options as any).packages.native.template; // default ｜ link
     const xcodedir = join(projectPath, 'frameworks/runtime-src/proj.ios_mac', `${options.name}.xcodeproj`);
 
-    if (template === 'link' && existsSync(xcodedir)) {
+    if (template === 'link' && pathExistsSync(xcodedir)) {
 
         const projectpbx = join(xcodedir, 'project.pbxproj');
         // replace content
@@ -112,7 +114,7 @@ export async function updateXcodeproject(projectPath: string, options: ITaskOpti
     }
 
     const xcscheme = join(xcodedir, 'xcshareddata/xcschemes/HelloJavascript-clip.xcscheme');
-    if (existsSync(xcscheme)) {
+    if (pathExistsSync(xcscheme)) {
         let txt = (await readFile(xcscheme)).toString();
         txt = txt.replace(/HelloJavascript/g, options.name);
         await writeFile(xcscheme, txt);
@@ -130,7 +132,7 @@ export async function renameXcodeResource(projectPath: string, options: ITaskOpt
     ];
 
     for (let i = 0; i < renameFiles.length; i += 2) {
-        if (existsSync(renameFiles[i])) {
+        if (pathExistsSync(renameFiles[i])) {
             await rename(renameFiles[i], renameFiles[i + 1]);
         } else {
             console.log(`notice: file ${renameFiles[i]} not found!`);

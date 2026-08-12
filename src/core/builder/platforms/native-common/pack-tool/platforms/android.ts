@@ -1,3 +1,4 @@
+import { readFileUtf8Sync } from '../../../../../filesystem';
 import * as fs from 'fs-extra';
 import * as ps from 'path';
 import { cchelper } from '../utils';
@@ -238,7 +239,7 @@ export default class AndroidPackTool extends NativePackTool {
                 const ndkPropertiesPath = ps.join(ndkPath, 'source.properties');
                 if (fs.existsSync(ndkPropertiesPath)) {
                     try {
-                        const ndkContent = fs.readFileSync(ndkPropertiesPath, 'utf-8');
+                        const ndkContent = readFileUtf8Sync(ndkPropertiesPath);
                         const regexp = /Pkg\.Revision\s*=\s*(.*)/;
                         const match = ndkContent.match(regexp);
                         if (match && match[1]) {

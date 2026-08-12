@@ -1,7 +1,8 @@
+import { pathExistsSync } from '../../../filesystem';
 'use strict';
 
 import { Asset } from '@cocos/asset-db';
-import { existsSync, readFile } from 'fs-extra';
+import { readFile } from 'fs-extra';
 import { basename, dirname, extname, join } from 'path';
 import { SpriteFrame, Vec2, Size, Rect, SpriteAtlas } from 'cc';
 
@@ -60,7 +61,7 @@ export const TexturePackerHandler: AssetHandler = {
             if (asset._assetDB) {
                 const textureBaseName = basename(userData.atlasTextureName);
                 const texturePath = join(dirname(asset.source), textureBaseName);
-                if (!existsSync(texturePath)) {
+                if (!pathExistsSync(texturePath)) {
                     console.warn('Parse Error: Unable to find file Texture, the path: ' + texturePath);
                 }
                 asset.depend(texturePath);

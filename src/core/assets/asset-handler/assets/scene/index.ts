@@ -1,7 +1,7 @@
 'use strict';
 
 import { Asset } from '@cocos/asset-db';
-import { readJSON } from 'fs-extra';
+import { readJSONAsync as readJSON } from '../../../../filesystem';
 import { extname, basename, join } from 'path';
 
 import { getDependList, removeNull } from '../../utils';

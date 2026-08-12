@@ -1,6 +1,8 @@
+import { pathExistsSync } from '../../filesystem';
 'use strict';
 import { join } from 'path';
-import { existsSync, statSync, readJSONSync, writeJSONSync, readFileSync, remove, outputFile, ensureDir } from 'fs-extra';
+import { statSync, readFileSync, remove, outputFile, ensureDir } from 'fs-extra';
+import { outputJSONSync, readJSONSync } from '../../filesystem';
 import { globalSetup } from '../../test/global-setup';
 import { TestGlobalEnv } from '../../../tests/global-env';
 import { assetManager } from '..';
@@ -54,7 +56,7 @@ describe('测试 db 的操作接口', function () {
                 target: join(databasePath, `${name}.directory`),
             });
             expect(asset).not.toBeNull();
-            const exists = existsSync(join(databasePath, `${name}.directory`));
+            const exists = pathExistsSync(join(databasePath, `${name}.directory`));
             console.log(join(databasePath, `${name}.directory`));
             expect(exists).toBeTruthy();
 
@@ -95,10 +97,10 @@ describe('测试 db 的操作接口', function () {
             });
 
             expect(asset).not.toBeNull();
-            expect(existsSync(dest)).toBeTruthy();
+            expect(pathExistsSync(dest)).toBeTruthy();
             expect(statSync(dest).isDirectory()).toBeTruthy();
             expect(asset!.file).not.toEqual(dest);
-            expect(existsSync(asset!.file)).toBeTruthy();
+            expect(pathExistsSync(asset!.file)).toBeTruthy();
             expect(statSync(asset!.file).isDirectory()).toBeTruthy();
         });
 
@@ -174,10 +176,10 @@ describe('测试 db 的操作接口', function () {
 
     //         const uuid = await assetManager.queryUUID(`${TestGlobalEnv.testRootUrl}/${name}.directory2`);
 
-    //         const exists = existsSync(join(databasePath, `${name}.directory`));
+    //         const exists = pathExistsSync(join(databasePath, `${name}.directory`));
     //         expect(exists).toStrictEqual(true);
 
-    //         const exists2 = existsSync(join(databasePath, `${name}.directory2`));
+    //         const exists2 = pathExistsSync(join(databasePath, `${name}.directory2`));
     //         expect(exists2).toStrictEqual(true);
 
     //         const stat = statSync(join(databasePath, `${name}.directory2`));
@@ -195,10 +197,10 @@ describe('测试 db 的操作接口', function () {
 
     //         const uuid = await assetManager.queryUUID(`${TestGlobalEnv.testRootUrl}/${name}.normal2`);
 
-    //         const exists = existsSync(join(databasePath, `${name}.normal`));
+    //         const exists = pathExistsSync(join(databasePath, `${name}.normal`));
     //         expect(exists).toStrictEqual(true);
 
-    //         const exists2 = existsSync(join(databasePath, `${name}.normal2`));
+    //         const exists2 = pathExistsSync(join(databasePath, `${name}.normal2`));
     //         expect(exists2).toStrictEqual(true);
 
     //         const stat = statSync(join(databasePath, `${name}.normal2`));
@@ -219,10 +221,10 @@ describe('测试 db 的操作接口', function () {
     //             `${TestGlobalEnv.testRootUrl}/${name}.directory3`,
     //         );
 
-    //         const exists = existsSync(join(databasePath, `${name}.directory2`));
+    //         const exists = pathExistsSync(join(databasePath, `${name}.directory2`));
     //         expect(exists).toStrictEqual(false);
 
-    //         const exists2 = existsSync(join(databasePath, `${name}.directory3`));
+    //         const exists2 = pathExistsSync(join(databasePath, `${name}.directory3`));
     //         expect(exists2).toStrictEqual(true);
 
     //         const stat = statSync(join(databasePath, `${name}.directory3`));
@@ -239,10 +241,10 @@ describe('测试 db 的操作接口', function () {
     //             `${TestGlobalEnv.testRootUrl}/${name}.normal3`,
     //         );
 
-    //         const exists = existsSync(join(databasePath, `${name}.normal2`));
+    //         const exists = pathExistsSync(join(databasePath, `${name}.normal2`));
     //         expect(exists).toStrictEqual(false);
 
-    //         const exists2 = existsSync(join(databasePath, `${name}.normal3`));
+    //         const exists2 = pathExistsSync(join(databasePath, `${name}.normal3`));
     //         expect(exists2).toStrictEqual(true);
 
     //         const stat = statSync(join(databasePath, `${name}.normal3`));
@@ -264,10 +266,10 @@ describe('测试 db 的操作接口', function () {
     //             `${TestGlobalEnv.testRootUrl}/${testName2}.normal3`,
     //         );
 
-    //         const exists = existsSync(join(databasePath, `${testName1}.normal3`));
+    //         const exists = pathExistsSync(join(databasePath, `${testName1}.normal3`));
     //         expect(exists).toStrictEqual(false);
 
-    //         const exists2 = existsSync(join(databasePath, `${testName2}.normal3`));
+    //         const exists2 = pathExistsSync(join(databasePath, `${testName2}.normal3`));
     //         expect(exists2).toStrictEqual(true);
 
     //         const content = readFileSync(join(databasePath, `${testName2}.normal3`), 'utf8');
@@ -288,7 +290,7 @@ describe('测试 db 的操作接口', function () {
     //         const testName2Uuid = await assetManager.queryUUID(join(databasePath, `${testName2}.normal3`));
     //         expect(!!testName2Uuid).toStrictEqual(true);
 
-    //         const metaExist = existsSync(join(databasePath, `${testName2}.normal3.meta`));
+    //         const metaExist = pathExistsSync(join(databasePath, `${testName2}.normal3.meta`));
     //         expect(metaExist).toStrictEqual(true);
 
     //         const content = readFileSync(join(databasePath, `${testName2}.normal3`), 'utf8');
@@ -311,10 +313,10 @@ describe('测试 db 的操作接口', function () {
 
             await assetManager.renameAsset(`${TestGlobalEnv.testRootUrl}/${sourceName}`, targetName);
 
-            expect(existsSync(sourcePath)).toStrictEqual(false);
-            expect(existsSync(`${sourcePath}.meta`)).toStrictEqual(false);
-            expect(existsSync(targetPath)).toStrictEqual(true);
-            expect(existsSync(`${targetPath}.meta`)).toStrictEqual(true);
+            expect(pathExistsSync(sourcePath)).toStrictEqual(false);
+            expect(pathExistsSync(`${sourcePath}.meta`)).toStrictEqual(false);
+            expect(pathExistsSync(targetPath)).toStrictEqual(true);
+            expect(pathExistsSync(`${targetPath}.meta`)).toStrictEqual(true);
             expect(readFileSync(targetPath, 'utf8')).toStrictEqual('rename-file');
         });
 
@@ -330,10 +332,10 @@ describe('测试 db 的操作接口', function () {
 
             await assetManager.renameAsset(asset!.uuid, targetName);
 
-            expect(existsSync(sourcePath)).toStrictEqual(false);
-            expect(existsSync(`${sourcePath}.meta`)).toStrictEqual(false);
-            expect(existsSync(targetPath)).toStrictEqual(true);
-            expect(existsSync(`${targetPath}.meta`)).toStrictEqual(true);
+            expect(pathExistsSync(sourcePath)).toStrictEqual(false);
+            expect(pathExistsSync(`${sourcePath}.meta`)).toStrictEqual(false);
+            expect(pathExistsSync(targetPath)).toStrictEqual(true);
+            expect(pathExistsSync(`${targetPath}.meta`)).toStrictEqual(true);
             expect(statSync(targetPath).isDirectory()).toStrictEqual(true);
         });
 
@@ -360,10 +362,10 @@ describe('测试 db 的操作接口', function () {
                 rename: true,
             });
 
-            expect(existsSync(sourcePath)).toStrictEqual(false);
-            expect(existsSync(targetPath)).toStrictEqual(true);
+            expect(pathExistsSync(sourcePath)).toStrictEqual(false);
+            expect(pathExistsSync(targetPath)).toStrictEqual(true);
             expect(readFileSync(targetPath, 'utf8')).toStrictEqual('target-content');
-            expect(existsSync(autoRenamedPath)).toStrictEqual(true);
+            expect(pathExistsSync(autoRenamedPath)).toStrictEqual(true);
             expect(readFileSync(autoRenamedPath, 'utf8')).toStrictEqual('source-content');
         });
 
@@ -381,7 +383,7 @@ describe('测试 db 的操作接口', function () {
                 'newName must include file extension'
             );
 
-            expect(existsSync(sourcePath)).toStrictEqual(true);
+            expect(pathExistsSync(sourcePath)).toStrictEqual(true);
             expect(readFileSync(sourcePath, 'utf8')).toStrictEqual('rename-no-ext');
         });
 
@@ -399,7 +401,7 @@ describe('测试 db 的操作接口', function () {
                 'newName must be a single file or directory name'
             );
 
-            expect(existsSync(sourcePath)).toStrictEqual(true);
+            expect(pathExistsSync(sourcePath)).toStrictEqual(true);
             expect(readFileSync(sourcePath, 'utf8')).toStrictEqual('rename-invalid');
         });
     });
@@ -409,9 +411,9 @@ describe('测试 db 的操作接口', function () {
 
             it('删除文件夹后源文件不存在', async () => {
                 await assetManager.removeAsset(`${TestGlobalEnv.testRootUrl}/${testName}`);
-                const exists = existsSync(join(databasePath, `${testName}`));
+                const exists = pathExistsSync(join(databasePath, `${testName}`));
                 expect(exists).toStrictEqual(false);
-                const metaExists = existsSync(join(databasePath, `${testName}`));
+                const metaExists = pathExistsSync(join(databasePath, `${testName}`));
                 console.log(Date.now());
                 expect(metaExists).toStrictEqual(false);
             });
@@ -420,10 +422,10 @@ describe('测试 db 的操作接口', function () {
         it('使用 url 删除普通资源', async function () {
             await assetManager.removeAsset(`${TestGlobalEnv.testRootUrl}/${testName}`);
 
-            const exists = existsSync(join(databasePath, `${testName}`));
+            const exists = pathExistsSync(join(databasePath, `${testName}`));
             expect(exists).toStrictEqual(false);
 
-            const metaExists = existsSync(join(databasePath, `${testName}.meta`));
+            const metaExists = pathExistsSync(join(databasePath, `${testName}.meta`));
             expect(metaExists).toStrictEqual(false);
         });
 
@@ -435,10 +437,10 @@ describe('测试 db 的操作接口', function () {
             });
             await assetManager.removeAsset(asset!.uuid);
 
-            const exists = existsSync(join(databasePath, `${testName}`));
+            const exists = pathExistsSync(join(databasePath, `${testName}`));
             expect(exists).toStrictEqual(false);
 
-            const metaExists = existsSync(join(databasePath, `${testName}.meta`));
+            const metaExists = pathExistsSync(join(databasePath, `${testName}.meta`));
             expect(metaExists).toStrictEqual(false);
         });
 
@@ -467,7 +469,7 @@ describe('测试 db 的操作接口', function () {
             await assetManager.saveAsset(`${TestGlobalEnv.testRootUrl}/${testName}`, 'test2');
 
             const filePath = join(TestGlobalEnv.testRoot, testName);
-            expect(existsSync(filePath)).toStrictEqual(true);
+            expect(pathExistsSync(filePath)).toStrictEqual(true);
 
             const content = readFileSync(filePath, 'utf8');
             expect(content).toStrictEqual('test2');
@@ -500,7 +502,7 @@ describe('测试 db 的操作接口', function () {
 
             const metaJson = readJSONSync(join(TestGlobalEnv.testRoot, `${testName}.meta`));
             metaJson.userData.testReimport = true;
-            writeJSONSync(join(databasePath, `${testName}.meta`), metaJson);
+            outputJSONSync(join(databasePath, `${testName}.meta`), metaJson);
 
             await assetManager.reimportAsset(uuid!);
             const assetMeta = await assetManager.queryAssetMeta(uuid!);
@@ -613,14 +615,14 @@ describe('测试 db 的操作接口', function () {
                 expect(asset).not.toBeNull();
                 
                 const fileName = `${name}_concurrent_${index}.txt`;
-                expect(existsSync(join(databasePath, fileName))).toBeTruthy();
+                expect(pathExistsSync(join(databasePath, fileName))).toBeTruthy();
                 
                 // 验证内容
                 const content = readFileSync(join(databasePath, fileName), 'utf8');
                 expect(content).toEqual(`test content ${index}`);
                 
                 // 验证 meta 文件存在
-                expect(existsSync(join(databasePath, `${fileName}.meta`))).toBeTruthy();
+                expect(pathExistsSync(join(databasePath, `${fileName}.meta`))).toBeTruthy();
             });
         });
     });
@@ -658,11 +660,11 @@ describe('测试 db 的操作接口', function () {
                 expect(assetInfo).not.toBeNull();
                 
                 // 验证文件存在
-                expect(existsSync(assetInfo!.file)).toBeTruthy();
+                expect(pathExistsSync(assetInfo!.file)).toBeTruthy();
                 
                 // 验证 meta 文件存在
                 const metaPath = `${assetInfo!.file}.meta`;
-                expect(existsSync(metaPath)).toBeTruthy();
+                expect(pathExistsSync(metaPath)).toBeTruthy();
             });
         });
     });
@@ -685,7 +687,7 @@ describe('测试 db 的操作接口', function () {
             expect(asset.isDirectory).toBeFalsy();
 
             const targetPath = join(databasePath, targetName);
-            expect(existsSync(targetPath)).toBeTruthy();
+            expect(pathExistsSync(targetPath)).toBeTruthy();
 
             const content = readFileSync(targetPath, 'utf8');
             expect(content).toEqual('import test content');
@@ -738,9 +740,9 @@ describe('测试 db 的操作接口', function () {
             expect(asset.type).toEqual('cc.ImageAsset');
 
             const targetPath = join(databasePath, targetName);
-            expect(existsSync(targetPath)).toBeTruthy();
+            expect(pathExistsSync(targetPath)).toBeTruthy();
 
-            const metaExists = existsSync(join(databasePath, `${targetName}.meta`));
+            const metaExists = pathExistsSync(join(databasePath, `${targetName}.meta`));
             expect(metaExists).toBeTruthy();
         });
 
@@ -758,9 +760,9 @@ describe('测试 db 的操作接口', function () {
             expect(assets.length).toBeGreaterThan(0);
 
             const targetPath = join(databasePath, targetDirName);
-            expect(existsSync(targetPath)).toBeTruthy();
-            expect(existsSync(join(targetPath, 'file1.txt'))).toBeTruthy();
-            expect(existsSync(join(targetPath, 'file2.txt'))).toBeTruthy();
+            expect(pathExistsSync(targetPath)).toBeTruthy();
+            expect(pathExistsSync(join(targetPath, 'file1.txt'))).toBeTruthy();
+            expect(pathExistsSync(join(targetPath, 'file2.txt'))).toBeTruthy();
 
             // 清理临时文件夹
             await remove(tempDirPath);
@@ -784,7 +786,7 @@ describe('测试 db 的操作接口', function () {
     //     // 刷新资源后，需要重新生成 effect.bin
 
     //     expect(await result).toBeTruthy();
-    //     expect(existsSync(effectBin)).toBeTruthy();
+    //     expect(pathExistsSync(effectBin)).toBeTruthy();
     // });
 
     // describe('rename-asset', () => {
@@ -794,10 +796,10 @@ describe('测试 db 的操作接口', function () {
     //             `${TestGlobalEnv.testRootUrl}/${name}rename.directory`,
     //         );
 
-    //         const exists = existsSync(join(databasePath, `${name}.directory`));
+    //         const exists = pathExistsSync(join(databasePath, `${name}.directory`));
     //         expect(exists).toStrictEqual(false);
 
-    //         const exists2 = existsSync(join(databasePath, `${name}rename.directory`));
+    //         const exists2 = pathExistsSync(join(databasePath, `${name}rename.directory`));
     //         expect(exists2).toStrictEqual(true);
 
     //         const stat = statSync(join(databasePath, `${name}rename.directory`));
@@ -810,10 +812,10 @@ describe('测试 db 的操作接口', function () {
     //             `${TestGlobalEnv.testRootUrl}/${name}.normal2`,
     //         );
 
-    //         const exists = existsSync(join(databasePath, `${name}.normal`));
+    //         const exists = pathExistsSync(join(databasePath, `${name}.normal`));
     //         expect(exists).toStrictEqual(false);
 
-    //         const exists2 = existsSync(join(databasePath, `${name}.normal2`));
+    //         const exists2 = pathExistsSync(join(databasePath, `${name}.normal2`));
     //         expect(exists2).toStrictEqual(true);
 
     //         const stat = statSync(join(databasePath, `${name}.normal2`));
@@ -841,7 +843,7 @@ describe('测试 db 的操作接口', function () {
     //         const testName2Uuid = await assetManager.queryUUID(join(databasePath, `${testName2}.normal2`));
     //         expect(!!testName2Uuid).toStrictEqual(true);
 
-    //         const metaExist = existsSync(join(databasePath, `${testName2}.normal2.meta`));
+    //         const metaExist = pathExistsSync(join(databasePath, `${testName2}.normal2.meta`));
     //         expect(metaExist).toStrictEqual(true);
 
     //         const content = readFileSync(join(databasePath, `${testName2}.normal2`), 'utf8');
@@ -856,10 +858,10 @@ describe('测试 db 的操作接口', function () {
     //             `${TestGlobalEnv.testRootUrl}/move/${testName2}.normal2`,
     //         );
 
-    //         const exists = existsSync(join(databasePath, `${testName1}.normal2`));
+    //         const exists = pathExistsSync(join(databasePath, `${testName1}.normal2`));
     //         expect(exists).toStrictEqual(false);
 
-    //         const exists2 = existsSync(join(databasePath, `move/${testName2}.normal2`));
+    //         const exists2 = pathExistsSync(join(databasePath, `move/${testName2}.normal2`));
     //         expect(exists2).toStrictEqual(true);
 
     //         const content = readFileSync(join(databasePath, `move/${testName2}.normal2`), 'utf8');
@@ -949,7 +951,7 @@ describe('测试 db 的操作接口', function () {
     //     const defaultMetaPath = join(TestGlobalEnv.projectRoot, '.creator/default-meta.json');
     //     let testImageType = 'texture';
     //     let testTrimType = 'none';
-    //     if (existsSync(defaultMetaPath)) {
+    //     if (pathExistsSync(defaultMetaPath)) {
     //         it('获取用户本地导入配置数据，验证接口查询结果适合正常', async () => {
     //             const info = readJsonSync(defaultMetaPath);
     //             const assetConfigMap = await assetManager.queryAssetConfigMap();
@@ -1021,10 +1023,10 @@ describe('测试 db 的操作接口', function () {
         await new Promise(resolve => setTimeout(resolve, 100));
 
         // 最后清理残留文件
-        if (existsSync(TestGlobalEnv.testRoot)) {
+        if (pathExistsSync(TestGlobalEnv.testRoot)) {
             await remove(TestGlobalEnv.testRoot);
         }
-        if (existsSync(TestGlobalEnv.testRoot + '.meta')) {
+        if (pathExistsSync(TestGlobalEnv.testRoot + '.meta')) {
             await remove(TestGlobalEnv.testRoot + '.meta');
         }
     });

@@ -2,7 +2,7 @@
 
 import { Asset } from '@cocos/asset-db';
 import { version, versionCode } from './index';
-import { readJSON } from 'fs-extra';
+import { readJSONAsync as readJSON } from '../../../../filesystem';
 
 import { AssetHandler } from '../../../@types/protected';
 import { getDependList, removeNull } from '../../utils';

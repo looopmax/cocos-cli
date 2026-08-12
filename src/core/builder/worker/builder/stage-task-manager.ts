@@ -1,5 +1,5 @@
 import { join } from 'path';
-import { outputJSON } from 'fs-extra';
+import { outputJSONAsync as outputJSON } from '../../../filesystem';
 import { workerManager } from '../worker-pools/sub-process-manager';
 import { BuildTaskBase } from './manager/task-base';
 import { newConsole } from '../../../base/console';

@@ -1,4 +1,5 @@
-import { ensureDir, existsSync, remove } from 'fs-extra';
+import { pathExistsSync } from '../../../../filesystem';
+import { ensureDir, remove } from 'fs-extra';
 import { dirname, join } from 'path';
 
 export const ICON_DPI_LIST: Record<string, number> = {
@@ -41,7 +42,7 @@ function getIconPath(base: string, dirName: string): string {
 }
 
 function hasIconRoot(base: string): boolean {
-    return existsSync(getIconPath(base, 'mipmap-mdpi'));
+    return pathExistsSync(getIconPath(base, 'mipmap-mdpi'));
 }
 
 function resolveIconRoot(projectRoot: string, type: 'default' | 'custom', outputName: string): { type: 'default' | 'custom'; base: string } {

@@ -1,6 +1,8 @@
+import { pathExistsSync } from '../../filesystem';
 import { v4 } from 'node-uuid';
 import { basename, join } from 'path';
-import { existsSync, mkdir, readJSON } from 'fs-extra';
+import { mkdir } from 'fs-extra';
+import { readJSONAsync as readJSON } from '../../filesystem';
 import { ProjectInfo, ProjectType } from '../@types/public';
 import { safeOutputJSON } from '../utils';
 
@@ -147,7 +149,7 @@ export class Project implements IProject {
     public static async create(projectPath: string, type: ProjectType = '3d'): Promise<boolean> {
         try {
             const packageJSONPath = Project.getPackageJsonPath(projectPath);
-            if (existsSync(projectPath) || existsSync(packageJSONPath)) {
+            if (pathExistsSync(projectPath) || pathExistsSync(packageJSONPath)) {
                 throw new Error('Failed to create project, project exist');
             }
             await mkdir(projectPath, { recursive: true });
@@ -155,7 +157,7 @@ export class Project implements IProject {
                 join(projectPath, 'temp'),
                 join(projectPath, 'library'),
                 join(projectPath, 'settings', 'v2', 'packages')
-            ].map(dir => !existsSync(dir) ? mkdir(dir, { recursive: true }) : Promise.resolve());
+            ].map(dir => !pathExistsSync(dir) ? mkdir(dir, { recursive: true }) : Promise.resolve());
 
             await Promise.all(requiredDirs);
             await safeOutputJSON(packageJSONPath, Project.generateProjectInfo(projectPath, type));
@@ -223,7 +225,7 @@ export class Project implements IProject {
 
     public async open(projectPath: string): Promise<boolean> {
         this._projectPath = projectPath;
-        if (!existsSync(projectPath) || !existsSync(this.pkgPath)) {
+        if (!pathExistsSync(projectPath) || !pathExistsSync(this.pkgPath)) {
             throw new Error(`Failed to open project ${projectPath} : package.json not found.`);
         } else {
             const info: ProjectInfo = await readJSON(this.pkgPath);

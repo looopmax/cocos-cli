@@ -1,7 +1,8 @@
+import { pathExistsSync } from '../../filesystem';
 import { project, Project } from '../../project/script';
 import { ProjectInfo } from '../@types/public';
 import { safeOutputJSON } from '../utils';
-import { existsSync, readJSON } from 'fs-extra';
+import { readJSON } from 'fs-extra';
 import { join } from 'path';
 import { v4 } from 'node-uuid';
 

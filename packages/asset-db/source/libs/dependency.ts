@@ -1,9 +1,9 @@
 'use strict';
 
-import { existsSync, readJSONSync, outputJSONSync } from 'fs-extra';
 import { join, relative } from 'path';
 import { CustomConsole } from './console';
 import { Migrate, Migrator } from './migrator';
+import { fsExists, outputJSONSync, readJSONSync } from './filesystem';
 
 interface DependMap {
     path: { [path: string]: string[] };
@@ -113,7 +113,7 @@ export class DependencyManager {
     }
 
     private async readRecordJSON(path: string): Promise<RecordInfoMap | undefined> {
-        if (!existsSync(path)) {
+        if (!fsExists(path)) {
             return;
         }
         try {

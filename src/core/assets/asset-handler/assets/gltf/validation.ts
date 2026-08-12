@@ -1,4 +1,5 @@
 import fs from 'fs';
+import { readFileUtf8Sync } from '../../../../filesystem';
 import { Severity, validateBytes, validateString, ValidationOptions } from 'gltf-validator';
 
 export async function validateGlTf(gltfFilePath: string, assetPath: string) {
@@ -16,7 +17,7 @@ export async function validateGlTf(gltfFilePath: string, assetPath: string) {
     // We should read the string by self.
     const report = await (isGlb
         ? validateBytes(Uint8Array.from(fs.readFileSync(gltfFilePath)), validationOptions)
-        : validateString(fs.readFileSync(gltfFilePath).toString()));
+        : validateString(readFileUtf8Sync(gltfFilePath)));
 
     // Remove specified errors.
     const ignoredMessages = report.issues.messages.filter((message) => {

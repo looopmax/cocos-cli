@@ -150,7 +150,8 @@ export interface MigrationSwapSpace {
 export const migrationHook = {
     async pre(asset: Asset) {
         const swap = asset.getSwapSpace<MigrationSwapSpace>();
-        swap.json = await fs.readJSON(asset.source);
+        const { readJSONAsync } = await import('../../../../filesystem');
+        swap.json = await readJSONAsync(asset.source);
     },
     async post(asset: Asset, num: number) {
         const swap = asset.getSwapSpace<MigrationSwapSpace>();

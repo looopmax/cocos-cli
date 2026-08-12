@@ -1,6 +1,7 @@
+import { pathExistsSync } from '../../../../filesystem';
 'use strict';
 
-import { existsSync, statSync, readdirSync } from 'fs-extra';
+import { statSync, readdirSync } from 'fs-extra';
 import { dirname, join, normalize } from 'path';
 import { platform } from 'os';
 import { IAndroidInternalBuildOptions } from './type';
@@ -87,10 +88,10 @@ function findSdkPath(): string {
 
     if (process.platform === 'win32' && process.env.LOCALAPPDATA) {
         const defaultSdkPath = join(process.env.LOCALAPPDATA, 'Android', 'Sdk');
-        if (existsSync(defaultSdkPath)) return defaultSdkPath;
+        if (pathExistsSync(defaultSdkPath)) return defaultSdkPath;
     } else if (process.platform === 'darwin' && process.env.HOME) {
         const defaultSdkPath = join(process.env.HOME, 'Library', 'Android', 'sdk');
-        if (existsSync(defaultSdkPath)) return defaultSdkPath;
+        if (pathExistsSync(defaultSdkPath)) return defaultSdkPath;
     }
     return '';
 }
@@ -101,7 +102,7 @@ function findNdkPath(sdkPath: string): string {
 
     if (sdkPath) {
         const ndkBase = join(sdkPath, 'ndk');
-        if (existsSync(ndkBase)) {
+        if (pathExistsSync(ndkBase)) {
             try {
                 const dirs = readdirSync(ndkBase);
                 if (dirs.length > 0) {
@@ -145,7 +146,7 @@ function resolveJavaPath(javaHome: string): { javaHome: string, javaPath: string
         } else if (st.isDirectory()) {
             const javaFileName = platform() === 'win32' ? 'java.exe' : 'java';
             const pathToJava = join(javaHome, 'bin', javaFileName);
-            if (!existsSync(pathToJava)) {
+            if (!pathExistsSync(pathToJava)) {
                 console.error(`Java executable not found at ${javaHome}/bin`);
                 return { javaHome, javaPath: '' };
             }

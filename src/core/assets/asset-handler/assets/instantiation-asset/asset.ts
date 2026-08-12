@@ -1,8 +1,9 @@
+import { pathExistsSync } from '../../../../filesystem';
 'use strict';
 
 import { Asset } from '@cocos/asset-db';
 import { AssetHandlerBase } from '../../../@types/protected';
-import { createReadStream, createWriteStream, ensureDirSync, existsSync, readdirSync, removeSync } from 'fs-extra';
+import { createReadStream, createWriteStream, ensureDirSync, readdirSync, removeSync } from 'fs-extra';
 import { dirname, join, parse } from 'path';
 import utils from '../../../../base/utils';
 import { GlobalPaths } from '../../../../../global';
@@ -37,7 +38,7 @@ export const InstantiationAssetHandler: AssetHandlerBase = {
                 await asset.copyToLibrary('.' + name, file);
             }
 
-            if (existsSync(temp)) {
+            if (pathExistsSync(temp)) {
                 removeSync(temp);
             }
 

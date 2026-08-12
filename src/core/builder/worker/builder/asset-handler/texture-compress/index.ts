@@ -1,4 +1,6 @@
-import { copySync, ensureDirSync, outputFile, readFileSync, readJsonSync, remove, stat, existsSync, outputJSONSync, copy, ensureDir, exists, outputJSON } from 'fs-extra';
+import { pathExistsSync } from '../../../../../filesystem';
+import { copySync, ensureDirSync, outputFile, readFileSync, remove, stat, copy, ensureDir, exists } from 'fs-extra';
+import { outputJSONAsync as outputJSON, outputJSONSync, readJSONSync } from '../../../../../filesystem';
 import { basename, dirname, extname, join } from 'path';
 import { checkHasMipMaps, compressMipmapFiles, genMipmapFiles } from './minimaps';
 import { compressCustomFormat, getCompressFunc } from './compress-tool';
@@ -70,8 +72,8 @@ export class TextureCompress extends EventEmitter {
 
     static async initCommonOptions() {
         TextureCompress.allTextureCompressConfig = await queryAllCompressConfig();
-        if (existsSync(TextureCompress.storedCompressInfoPath)) {
-            TextureCompress.storedCompressInfo = readJsonSync(TextureCompress.storedCompressInfoPath);
+        if (pathExistsSync(TextureCompress.storedCompressInfoPath)) {
+            TextureCompress.storedCompressInfo = readJSONSync(TextureCompress.storedCompressInfoPath);
         } else {
             TextureCompress.storedCompressInfo = {};
         }
@@ -296,7 +298,7 @@ export class TextureCompress extends EventEmitter {
 
         // 6. 填充压缩后的路径到 info 内
         await Promise.all(compressQueue.map(async (config) => {
-            if (existsSync(config.dest)) {
+            if (pathExistsSync(config.dest)) {
                 taskMap[config.uuid].dest.push(config.dest);
                 taskMap[config.uuid].suffix.push(config.suffix);
             } else {
@@ -362,7 +364,7 @@ export class TextureCompress extends EventEmitter {
                     return;
                 }
                 const cacheDest = join(TextureCompress.compressCacheDir, uuid.substr(0, 2), uuid + textureFormatConfigs[formatType].suffix);
-                if (this.textureCompress && !dirty && existsSync(cacheDest)) {
+                if (this.textureCompress && !dirty && pathExistsSync(cacheDest)) {
                     info.dest!.push(cacheDest);
                     info.suffix.push(getSuffix(formatsInfo[realFormat], textureFormatConfigs[formatType].suffix));
                     console.debug(`Use cache compress image of {Asset(${uuid})} ({link(${cacheDest})})`);

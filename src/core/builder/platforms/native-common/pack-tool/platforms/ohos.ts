@@ -2,6 +2,7 @@
 
 import * as ps from 'path';
 import * as fs from 'fs-extra';
+import { outputJSONAsync, readJSONAsync } from '../../../../../filesystem';
 import { cchelper, Paths } from '../utils';
 import { randomBytes } from 'crypto';
 import NativePackTool, { CocosParams } from '../base/default';
@@ -65,7 +66,7 @@ export default class OHOSPackTool extends NativePackTool {
         try {
             // try update orientation, failures allowed
             const cfgFile = ps.join(ohosProjDir, 'entry/src/main/config.json');
-            const configJSON = await fs.readJSON(cfgFile);
+            const configJSON = await readJSONAsync(cfgFile);
             const abilities = configJSON.module?.abilities;
             if (abilities?.length > 0) {
                 const setting = platformParams.orientation;
@@ -85,7 +86,7 @@ export default class OHOSPackTool extends NativePackTool {
                 });
             }
             configJSON.app.bundleName = platformParams.packageName;
-            await fs.outputJSON(cfgFile, configJSON, { spaces: 2 });
+            await outputJSONAsync(cfgFile, configJSON, { spaces: 2 });
         } catch (e) {
             console.error(e);
         }
@@ -101,7 +102,7 @@ export default class OHOSPackTool extends NativePackTool {
                 stringList.push(appNameItem);
             }
             appNameItem.value = this.params.projectName || 'CocosGame';
-            await fs.outputJSON(stringJson, stringJsonObj, { spaces: 2 });
+            await outputJSONAsync(stringJson, stringJsonObj, { spaces: 2 });
         } catch (e) {
             console.error(e);
         }

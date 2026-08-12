@@ -1,12 +1,18 @@
 'use strict';
 
 import { dirname } from 'path';
-import { copy, ensureDir, existsSync, move, outputFile, readFile, remove, stat } from 'fs-extra';
+import { copy, ensureDir, move, outputFile, readFile, remove, stat } from 'fs-extra';
 import { IAssetDeleteOptions, IAssetFileSystemProvider, IAssetRenameOptions, IAssetWriteFileOptions } from './provider';
+import { accessSync } from 'fs';
 
 export class LocalAssetFileSystemProvider implements IAssetFileSystemProvider {
-    exists(path: string) {
-        return existsSync(path);
+    exists(path: string): boolean {
+        try {
+            accessSync(path);
+            return true;
+        } catch {
+            return false;
+        }
     }
 
     async stat(path: string) {

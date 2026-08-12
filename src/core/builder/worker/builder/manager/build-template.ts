@@ -1,4 +1,6 @@
-import { existsSync, copy, remove, readJSON } from 'fs-extra';
+import { pathExistsSync } from '../../../../filesystem';
+import { copy, remove } from 'fs-extra';
+import { readJSONAsync as readJSON } from '../../../../filesystem';
 import { basename, join } from 'path';
 import i18n from '../../../../base/i18n';
 import { Platform } from '../../../@types';
@@ -25,13 +27,13 @@ export class BuildTemplate implements IBuildTemplate {
         const commonDir = join(buildTemplateDir, 'common');
         const platformDir = join(buildTemplateDir, this.config?.dirname || platform);
         const taskDir = join(buildTemplateDir, taskName);
-        if (existsSync(taskDir)) {
+        if (pathExistsSync(taskDir)) {
             this._buildTemplateDirs.push(taskDir);
         }
-        if (existsSync(platformDir)) {
+        if (pathExistsSync(platformDir)) {
             this._buildTemplateDirs.push(platformDir);
         }
-        if (existsSync(commonDir)) {
+        if (pathExistsSync(commonDir)) {
             this._buildTemplateDirs.push(commonDir);
         }
         const internalTemplate: Record<string, string> = {
@@ -57,7 +59,7 @@ export class BuildTemplate implements IBuildTemplate {
             // 默认构建模板需要有版本号
             const templateVersionJson = join(builderConfig.buildTemplateDir, 'templates-version.json');
             // 用户模板版本号
-            if (existsSync(templateVersionJson)) {
+            if (pathExistsSync(templateVersionJson)) {
                 this._versionUser = (await readJSON(templateVersionJson))[platform];
             }
             this._versionUser = this._versionUser || '1.0.0';
@@ -78,7 +80,7 @@ export class BuildTemplate implements IBuildTemplate {
         for (let i = 0; i < this._buildTemplateDirs.length; i++) {
             const dir = this._buildTemplateDirs[i];
             const path = join(dir, relativeUrl);
-            if (existsSync(path)) {
+            if (pathExistsSync(path)) {
                 return path;
             }
         }

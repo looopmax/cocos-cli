@@ -56,7 +56,8 @@ export async function modelConvertRoutine<T>(
     const statusFile = ps.join(workspace, 'status.json');
     let oldStatus: IConvertStatus | undefined;
     try {
-        oldStatus = await fs.readJson(statusFile);
+        const { readJSONAsync } = await import('../../../../filesystem');
+        oldStatus = await readJSONAsync(statusFile);
     } catch (err) {
         console.debug(`Status file ${statusFile}: ${err}`);
     }

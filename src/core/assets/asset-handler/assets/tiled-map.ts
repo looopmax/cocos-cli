@@ -1,3 +1,4 @@
+import { readFileUtf8Sync } from '../../../filesystem';
 import { Asset, queryAsset } from '@cocos/asset-db';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -47,7 +48,7 @@ async function searchDependFiles(asset: Asset, tmxFile: string, tmxFileData: str
 
             if (fs.existsSync(tsxAbsPath)) {
                 tsxAbsFiles.push(tsxAbsPath);
-                const tsxContent = fs.readFileSync(tsxAbsPath, 'utf-8');
+                const tsxContent = readFileUtf8Sync(tsxAbsPath);
                 const tsxDoc = new DOMParser().parseFromString(tsxContent);
                 if (tsxDoc) {
                     const image = await parseTilesetImages(asset, tsxDoc, tsxAbsPath);
@@ -180,7 +181,7 @@ export const TiledMapHandler: AssetHandler = {
 
             const tiledMap = new TiledMapAsset();
             // 读取 tield-map 文件内的数据
-            const data = fs.readFileSync(asset.source, { encoding: 'utf8' });
+            const data = readFileUtf8Sync(asset.source);
             tiledMap.name = path.basename(asset.source, asset.extname);
             // 3.5 再改
             // tiledMap.name = asset.basename || '';

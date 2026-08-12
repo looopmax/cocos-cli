@@ -1,9 +1,8 @@
 'use strict';
 
-import { existsSync, readFileSync } from 'fs-extra';
 import { v1, v4 } from 'node-uuid';
 import { CustomConsole } from './console';
-import { fsDelete, fsExists, fsWriteFile, IAssetDeleteOptions, IAssetWriteFileOptions } from './filesystem';
+import { fsDelete, fsExists, fsWriteFile, IAssetDeleteOptions, IAssetWriteFileOptions, readFileUtf8Sync } from './filesystem';
 
 // Meta json 文件的格式
 export interface Meta {
@@ -164,7 +163,7 @@ export class MetaManager {
         let metaInfo: MetaInfo;
         let string: string;
         try {
-            string = readFileSync(path, 'utf8');
+            string = readFileUtf8Sync(path);
         } catch (error) {
             this.console.debug(`read meta file failed: ${path}`);
             return false;
@@ -220,7 +219,7 @@ export class MetaManager {
         delete item.json.name;
 
         const str = JSON.stringify(item.json);
-        if (str === item.backup && await fsExists(path)) {
+        if (str === item.backup && fsExists(path)) {
             return;
         }
 
@@ -256,7 +255,7 @@ export class MetaManager {
         }
 
         // 如果文件存在，则更新到内存里
-        if (existsSync(path)) {
+        if (fsExists(path)) {
             this.read(path);
             if (this.path2meta[path]) {
                 return this.path2meta[path];

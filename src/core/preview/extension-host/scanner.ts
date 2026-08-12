@@ -1,5 +1,6 @@
+import { readFileUtf8Sync } from '../../filesystem';
 import { join, isAbsolute } from 'path';
-import { existsSync, readdirSync, readFileSync } from 'fs';
+import { existsSync, readdirSync } from 'fs';
 
 /**
  * 一个项目扩展的预览相关贡献信息。
@@ -54,7 +55,7 @@ export function scanPreviewExtensions(projectPath: string): PreviewExtension[] {
         }
         let manifest: any;
         try {
-            manifest = JSON.parse(readFileSync(pkgPath, 'utf8'));
+            manifest = JSON.parse(readFileUtf8Sync(pkgPath));
         } catch {
             continue;
         }

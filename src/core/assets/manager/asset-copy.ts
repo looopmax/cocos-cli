@@ -1,4 +1,5 @@
-import { existsSync, readdir, stat } from 'fs-extra';
+import { pathExistsSync } from '../../filesystem';
+import { readdir, stat } from 'fs-extra';
 import { basename, dirname, extname, join, relative } from 'path';
 import type { AssetOperationOption } from '../@types/public';
 import utils from '../../base/utils';
@@ -125,7 +126,7 @@ async function collectNestedMetaPaths(directory: string, paths: string[]): Promi
 async function collectMetaCopyEntries(source: string): Promise<{ entries: MetaCopyEntry[]; paths: string[] }> {
     const metaPaths: string[] = [];
     const sourceMeta = `${source}.meta`;
-    if (!existsSync(sourceMeta)) {
+    if (!pathExistsSync(sourceMeta)) {
         throw new Error(`Cannot copy asset because its meta file does not exist: ${sourceMeta}`);
     }
     metaPaths.push(sourceMeta);
@@ -162,7 +163,7 @@ async function collectAssetContentCopyEntries(
     const entries: AssetContentCopyEntry[] = [];
     for (const metaPath of metaPaths) {
         const assetPath = metaPath.slice(0, -'.meta'.length);
-        if (!existsSync(assetPath) || (await stat(assetPath)).isDirectory()) {
+        if (!pathExistsSync(assetPath) || (await stat(assetPath)).isDirectory()) {
             continue;
         }
         if (!JSON_ASSET_EXTENSIONS.has(extname(assetPath).toLowerCase())) {
@@ -192,7 +193,7 @@ function resolveAssetTarget(root: string, relativePath: string | null): string {
 }
 
 async function removePathIfExists(path: string): Promise<void> {
-    if (existsSync(path)) {
+    if (pathExistsSync(path)) {
         await deletePath(path, { useTrash: false });
     }
 }
@@ -242,8 +243,8 @@ export async function copyAssetSource(
     const targetMeta = `${target}.meta`;
     const stagingMeta = `${staging}.meta`;
     const backupMeta = `${backup}.meta`;
-    const targetExists = existsSync(target);
-    const targetMetaExists = existsSync(targetMeta);
+    const targetExists = pathExistsSync(target);
+    const targetMetaExists = pathExistsSync(targetMeta);
 
     if ((targetExists || targetMetaExists) && !options?.overwrite) {
         throw new Error(`file ${target} already exists, please use overwrite option to overwrite it.`);
@@ -288,12 +289,12 @@ export async function copyAssetSource(
                 }
             },
             async () => {
-                if (backupMetaMoved && existsSync(backupMeta)) {
+                if (backupMetaMoved && pathExistsSync(backupMeta)) {
                     await renamePath(backupMeta, targetMeta, { overwrite: true });
                 }
             },
             async () => {
-                if (backupMoved && existsSync(backup)) {
+                if (backupMoved && pathExistsSync(backup)) {
                     await renamePath(backup, target, { overwrite: true });
                 }
             },
@@ -345,12 +346,12 @@ export async function copyAssetSource(
                 () => removePathIfExists(target),
                 () => removePathIfExists(targetMeta),
                 async () => {
-                    if (backupMetaMoved && existsSync(backupMeta)) {
+                    if (backupMetaMoved && pathExistsSync(backupMeta)) {
                         await renamePath(backupMeta, targetMeta, { overwrite: true });
                     }
                 },
                 async () => {
-                    if (backupMoved && existsSync(backup)) {
+                    if (backupMoved && pathExistsSync(backup)) {
                         await renamePath(backup, target, { overwrite: true });
                     }
                 },

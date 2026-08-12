@@ -1,6 +1,7 @@
 import { join } from 'path';
 import { existsSync } from 'fs';
-import { readJSONSync, remove } from 'fs-extra';
+import { remove } from 'fs-extra';
+import { readJSONSync } from '../../filesystem';
 import { globalSetup } from '../../test/global-setup';
 import { TestGlobalEnv } from '../../../tests/global-env';
 

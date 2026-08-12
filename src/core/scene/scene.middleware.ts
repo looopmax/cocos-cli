@@ -2,6 +2,7 @@ import type { IMiddlewareContribution } from '../../server/interfaces';
 import { Request, Response, NextFunction } from 'express';
 import path from 'path';
 import fse from 'fs-extra';
+import { pathExistsAsync } from '../filesystem';
 
 /**
  * 各资源数据库的 library（已导入数据）目录缓存。
@@ -42,7 +43,7 @@ async function resolveFromLibrary(tail: string): Promise<string | undefined> {
         if (rel.startsWith('..') || path.isAbsolute(rel)) {
             continue;
         }
-        if (await fse.pathExists(full)) {
+        if (await pathExistsAsync(full)) {
             return full;
         }
     }
@@ -81,17 +82,17 @@ export default {
                 // Normalize path to fix mixed slashes on Windows
                 filePath = path.normalize(filePath);
 
-                if (!(await fse.pathExists(filePath))) {
+                if (!(await pathExistsAsync(filePath))) {
                     // Fallback for .wasm.wasm -> .wasm if the double extension file is missing
                     if (filePath.endsWith('.wasm.wasm')) {
                         const fallbackPath = filePath.slice(0, -5);
-                        if (await fse.pathExists(fallbackPath)) {
+                    if (await pathExistsAsync(fallbackPath)) {
                             filePath = fallbackPath;
                         }
                     }
                 }
 
-                if (await fse.pathExists(filePath)) {
+                if (await pathExistsAsync(filePath)) {
                     const content = await fse.readFile(filePath);
                     res.status(200).send(content);
                 } else {

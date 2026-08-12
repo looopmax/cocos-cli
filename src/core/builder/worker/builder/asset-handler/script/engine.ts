@@ -11,6 +11,7 @@ import {
 } from 'fs-extra';
 import * as ccBuild from '@cocos/ccbuild';
 import fs from 'fs-extra';
+import { outputJSONAsync, pathExistsAsync, readJSONAsync } from '../../../../../filesystem';
 import ps from 'path';
 import { workerManager } from '../../../worker-pools/sub-process-manager';
 import fg from 'fast-glob';
@@ -114,7 +115,7 @@ async function buildEngine(options: IBuildEngineParam, ccEnvConstants: StatsQuer
     };
 
     const mangleConfigJsonPath = join(builderConfig.projectRoot, 'engine-mangle-config.json');
-    if (options.mangleProperties && !await fs.pathExists(mangleConfigJsonPath)) {
+    if (options.mangleProperties && !await pathExistsAsync(mangleConfigJsonPath)) {
         console.debug(`mangleProperties is enabled, but engine-mangle-config.json not found, create default mangle configuration`);
         defaultMangleConfig.__doc_url__ = utils.Url.getDocUrl('advanced-topics/mangle-properties.html');
         await fs.writeJson(mangleConfigJsonPath, defaultMangleConfig, { spaces: 2 });
@@ -234,7 +235,7 @@ export async function buildSplitEngine(options: IBuildSeparateEngineOptions, log
  * @param incrementalFile 增量文件。
  */
 async function validateCache(cache: string, incrementalFile: string) {
-    if (!await fs.pathExists(cache)) {
+    if (!await pathExistsAsync(cache)) {
         console.debug(`Engine cache (${cache}) does not exist.`);
         return false;
     }
@@ -268,7 +269,7 @@ async function isValidMeta(metaFile: string) {
 
     let exportMeta: unknown;
     try {
-        exportMeta = await fs.readJson(metaFile);
+        exportMeta = await readJSONAsync(metaFile);
     } catch (err) {
         return false;
     }
@@ -283,7 +284,7 @@ async function isValidMeta(metaFile: string) {
     }
 
     const mangleConfigJsonPath = join(builderConfig.projectRoot, 'engine-mangle-config.json');
-    if (await fs.pathExists(mangleConfigJsonPath)) {
+    if (await pathExistsAsync(mangleConfigJsonPath)) {
         const currentMangleConfigJsonMtime = (await fs.stat(mangleConfigJsonPath)).mtimeMs;
         const currentMangleConfigJsonReadableTime = new Date(currentMangleConfigJsonMtime).toLocaleString();
         const oldMangleConfigJsonMtime = (exportMeta as { mangleConfigJsonMtime?: number }).mangleConfigJsonMtime;
@@ -330,7 +331,7 @@ export async function queryEngineImportMap(
     baseUrl?: string) {
     let exportMeta: ccBuild.buildEngine.Result;
     try {
-        exportMeta = await fs.readJson(metaPath);
+        exportMeta = await readJSONAsync(metaPath);
     } catch (err) {
         throw new Error(`Failed to read engine export meta, engine might not have been build correctly: ${err}`);
     }

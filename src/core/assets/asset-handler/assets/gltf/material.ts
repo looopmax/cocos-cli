@@ -1,6 +1,7 @@
 import { Asset, queryPath, queryUrl, queryUUID, VirtualAsset } from '@cocos/asset-db';
 import * as cc from 'cc';
 import fs from 'fs-extra';
+import { writeFileUtf8Sync } from '../../../../filesystem';
 import path from 'path';
 import { GlTFUserData } from '../../../@types/userDatas';
 import { GltfConverter, IGltfAssetFinder } from '../utils/gltf-converter';
@@ -157,7 +158,7 @@ export async function dumpMaterial(
         const material = createMaterial(index, gltfConverter, assetFinder, glTFUserData);
         // @ts-ignore
         const serialized = EditorExtends.serialize(material);
-        fs.writeFileSync(destFilePath, serialized);
+        writeFileUtf8Sync(destFilePath, serialized);
     }
     // 不需要等待导入完成，这里只是想要获取到资源的 uuid
     (findAssetDB(glTFUserData.materialDumpDir) || asset._assetDB).refresh(destFilePath);

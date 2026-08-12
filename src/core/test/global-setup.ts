@@ -1,5 +1,6 @@
+import { pathExistsSync } from '../filesystem';
 import { EngineLoader } from 'cc/loader.js';
-import { existsSync, remove } from 'fs-extra';
+import { remove } from 'fs-extra';
 import { TestGlobalEnv } from '../../tests/global-env';
 let hasInit = false;
 
@@ -8,7 +9,7 @@ export async function globalSetup() {
     if (hasInit) {
         return;
     }
-    if (existsSync(TestGlobalEnv.libraryPath)) {
+    if (pathExistsSync(TestGlobalEnv.libraryPath)) {
         try {
             await remove(TestGlobalEnv.libraryPath);
             console.log('remove project library cache success');
@@ -17,7 +18,7 @@ export async function globalSetup() {
             console.error('remove project library cache fail');
         }
     }
-    if (existsSync(TestGlobalEnv.testRoot)) {
+    if (pathExistsSync(TestGlobalEnv.testRoot)) {
         try {
             await remove(TestGlobalEnv.testRoot);
             console.log('remove project test root cache success');

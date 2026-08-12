@@ -1,4 +1,5 @@
-import { WriteOptions, outputJSON } from 'fs-extra';
+import type { WriteOptions } from 'fs-extra';
+import { outputJSONAsync as outputJSON } from '../../filesystem';
 
 /**
  * Safely writes data to a JSON file with comprehensive error handling and logging

@@ -1,6 +1,7 @@
+import { pathExistsSync } from '../../../../filesystem';
 'use strict';
 import { IOhosInternalBuildOptions } from './type';
-import { existsSync, statSync, readdirSync } from 'fs-extra';
+import { statSync, readdirSync } from 'fs-extra';
 import { dirname, join, normalize } from 'path';
 import { platform } from 'os';
 
@@ -18,7 +19,7 @@ export async function generateOptions(options: IOhosInternalBuildOptions) {
             const localAppData = process.env.LOCALAPPDATA;
             if (localAppData) {
                 const defaultSdkPath = join(localAppData, 'Huawei', 'Sdk');
-                if (existsSync(defaultSdkPath)) {
+                if (pathExistsSync(defaultSdkPath)) {
                     ohos.sdkPath = defaultSdkPath;
                     console.log(`[OHOS] Auto-detected SDK at: ${ohos.sdkPath}`);
                 }
@@ -29,7 +30,7 @@ export async function generateOptions(options: IOhosInternalBuildOptions) {
             const home = process.env.HOME;
             if (home) {
                 const defaultSdkPath = join(home, 'Library', 'Huawei', 'sdk');
-                if (existsSync(defaultSdkPath)) {
+                if (pathExistsSync(defaultSdkPath)) {
                     ohos.sdkPath = defaultSdkPath;
                     console.log(`[OHOS] Auto-detected SDK at: ${ohos.sdkPath}`);
                 }
@@ -46,7 +47,7 @@ export async function generateOptions(options: IOhosInternalBuildOptions) {
         if (!ohos.ndkPath && ohos.sdkPath) {
              // 目前只支持这个版本
              const ndkPath = join(ohos.sdkPath, 'native', '2.1.1.21');
-             if (existsSync(ndkPath)) {
+             if (pathExistsSync(ndkPath)) {
                 ohos.ndkPath = ndkPath;
                 console.log(`[OHOS] Auto-detected NDK at: ${ohos.ndkPath}`);
              }

@@ -1,3 +1,4 @@
+import { writeFileUtf8Sync } from '../../../../../filesystem';
 import * as fs from 'fs-extra';
 import * as ps from 'path';
 import * as os from 'os';
@@ -163,7 +164,7 @@ export abstract class MacOSPackTool extends NativePackTool {
                             }
                         });
                     }
-                    fs.writeFileSync(pbxfile, projectFile.writeSync());
+                    writeFileUtf8Sync(pbxfile, projectFile.writeSync());
                     console.log(`  replace pbxfile: ${pbxfile}.`);
                 }
             } catch (e) {

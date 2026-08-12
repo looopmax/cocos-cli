@@ -1,4 +1,5 @@
-import { readFileSync, readdirSync, statSync } from 'fs';
+import { readFileUtf8Sync } from '../core/filesystem';
+import { readdirSync, statSync } from 'fs';
 import { join, extname, basename } from 'path';
 import { GlobalPaths } from '../global';
 
@@ -83,7 +84,7 @@ export class ResourceManager {
                         const fileName = basename(item, '.md');
 
                         // 只读取文件的前几行来提取标题，避免读取整个文件
-                        const fileContent = readFileSync(fullPath, 'utf-8');
+                        const fileContent = readFileUtf8Sync(fullPath);
                         const firstLines = fileContent.split('\n').slice(0, 10).join('\n');
                         const titleMatch = firstLines.match(/^#\s+(.+)$/m);
                         const title = titleMatch ? titleMatch[1].replace(/^[\u{1F3AE}\u{1F680}\u{1F4DA}\u{1F6E0}\u{1F4CB}\u{1F4E6}\u{2705}\u{1F3D7}\u{26A1}\u{1F4C2}\u{2139}\u{1F3A8}\u{1F50C}\u{2699}\u{1F6AB}\u{1F41B}\u{1F527}\u{274C}\u{26A0}\u{1F4C1}\u{1F3AF}\u{2753}\u{1F4D6}\u{1F4C4}\u{2728}]/gu, '').trim() : fileName;
@@ -228,7 +229,7 @@ export class ResourceManager {
             try {
                 // 根据语言偏好选择对应的文件
                 const languageSpecificPath = this.getLanguageSpecificPath(resource.filePath, preferredLanguage);
-                textContent = readFileSync(languageSpecificPath, 'utf-8');
+                textContent = readFileUtf8Sync(languageSpecificPath);
             } catch (error) {
                 console.warn(`Failed to read file ${resource.filePath}:`, error);
                 textContent = `# ${resource.title}\n\n文件读取失败: ${resource.filePath}`;

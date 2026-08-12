@@ -1,4 +1,6 @@
-import { readJSON, existsSync, copy, emptyDirSync } from 'fs-extra';
+import { pathExistsSync } from '../../../../../filesystem';
+import { copy, emptyDirSync } from 'fs-extra';
+import { readJSONAsync as readJSON } from '../../../../../filesystem';
 import { dirname, join, relative } from 'path';
 
 import type { TextureCompress } from '../texture-compress';
@@ -900,7 +902,7 @@ function copyAssetFile(asset: IAsset, bundle: IBundle, options: IInternalBundleB
             const source = extname.startsWith('.') ? asset.library + extname : join(asset.library, extname);
             // 利用相对路径来获取资源相对地址，避免耦合一些特殊资源的路径拼写规则，比如 font 
             const relativeName = relative(getLibraryDir(source), source);
-            if (!existsSync(source)) {
+            if (!pathExistsSync(source)) {
                 console.error(
                     i18n.t('builder.error.missing_import_files', {
                         path: `{link(${source})}`,
@@ -911,7 +913,7 @@ function copyAssetFile(asset: IAsset, bundle: IBundle, options: IInternalBundleB
             }
             const dest = join(rawAssetDir, relativeName);
             // 其他流程可能生成同类型后缀资源，比如压缩纹理，不能将其覆盖
-            if (existsSync(dest)) {
+            if (pathExistsSync(dest)) {
                 return Promise.resolve();
             }
             return copy(source, dest);

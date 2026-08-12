@@ -1,19 +1,10 @@
+import { pathExistsSync } from '../../../filesystem';
 'use strict';
 
 import os from 'os';
 import Ejs from 'ejs';
 import { dirname, join, resolve } from 'path';
-import {
-    existsSync,
-    mkdir,
-    moveSync,
-    readFile,
-    removeSync,
-    writeFile,
-    symlinkSync,
-    copy,
-    emptyDirSync,
-} from 'fs-extra';
+import { mkdir, moveSync, readFile, removeSync, writeFile, symlinkSync, copy, emptyDirSync } from 'fs-extra';
 import { getCmakePath } from './native-utils';
 import { IBundle, BuilderCache, IBuilder, IBuildStageTask, InternalBuildResult, Platform } from '../../@types/protected';
 import { CocosParams } from './pack-tool/base/default';
@@ -82,7 +73,7 @@ async function genCocosParams(options: ITaskOption, result: InternalBuildResult)
         }
     });
 
-    if (!existsSync(params.buildDir)) {
+    if (!pathExistsSync(params.buildDir)) {
         await mkdir(params.buildDir);
     }
 
@@ -182,7 +173,7 @@ export async function onAfterInit(this: IBuilder, options: ITaskOption, result: 
     result.paths.engineDir = options.buildEngineParam.output;
     // To support build-plugins before v3.5.0, need link `assets` to `data/`
     try {
-        if (!existsSync(assetsLink)) {
+        if (!pathExistsSync(assetsLink)) {
             symlinkSync(output, assetsLink, 'junction');
         }
     } catch (e) {
@@ -281,7 +272,7 @@ export async function onAfterCompressSettings(this: IBuilder, options: ITaskOpti
     const remoteDir = resolve(result.paths.dir, '../remote');
     // 目前原生平台构建主流程不会清理 data 目录外的文件夹，需要平台插件自行清理旧数据
     removeSync(remoteDir);
-    if (server && existsSync(result.paths.remote)) {
+    if (server && pathExistsSync(result.paths.remote)) {
         try {
             // moveSync 默认不会覆盖已存在的同名文件，在移动之前需要确认目标文件夹已被清空
             moveSync(result.paths.remote, remoteDir);

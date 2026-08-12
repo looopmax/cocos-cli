@@ -1,6 +1,7 @@
 'use strict';
 
-import { emptyDirSync, ensureDir, outputFileSync, outputJSONSync } from 'fs-extra';
+import { emptyDirSync, ensureDir, outputFileSync } from 'fs-extra';
+import { outputJSONSync } from '../../../filesystem';
 import { join } from 'path';
 import { BuilderAssetCache } from './manager/asset';
 import { InternalBuildResult } from './manager/build-result';

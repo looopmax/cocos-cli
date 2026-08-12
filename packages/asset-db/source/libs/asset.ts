@@ -1,7 +1,7 @@
 'use strict';
 
 import { extname, basename, relative, isAbsolute, sep, join } from 'path';
-import { existsSync, outputFile, remove, copy, ensureDir, statSync, removeSync } from 'fs-extra';
+import { outputFile, remove, copy, ensureDir, statSync } from 'fs-extra';
 import { AssetDB } from './asset-db';
 import { fsCopy, fsCreateDirectory, fsDelete, fsExists, fsStat, fsWriteFile, IAssetOperationContext, IAssetOperationKind } from './filesystem';
 
@@ -328,9 +328,9 @@ export class VirtualAsset {
         this.invalid = false;
         this.importError = null;
         // 检查并删除临时缓存
-        if (existsSync(this.temp)) {
+        if (fsExists(this.temp)) {
             try {
-                removeSync(this.temp);
+                await remove(this.temp);
             } catch (error) {
                 this._assetDB.console.warn(`Failed to delete temporary cache: ${this.source}`);
                 this._assetDB.console.warn(error);
@@ -444,7 +444,7 @@ export class VirtualAsset {
                 this.meta.files.sort();
             }
             const context = createOperationContext('copy', this.source, [target, file]);
-            if (await fsExists(file)) {
+            if (fsExists(file)) {
                 await fsDelete(file, { context, useTrash: false });
             }
             await fsCopy(target, file, { context });
@@ -461,7 +461,7 @@ export class VirtualAsset {
             this.meta.files.push(relativeFile);
             this.meta.files.sort();
         }
-        if (await fsExists(file)) {
+        if (fsExists(file)) {
             await fsDelete(file, { context, useTrash: false });
         }
         await fsCopy(target, file, { context });
@@ -474,7 +474,7 @@ export class VirtualAsset {
     async deleteFromLibrary(extOrFile: string) {
         if (isExtname(extOrFile)) {
             let file = `${this.library}${extOrFile}`;
-            if (!await fsExists(file)) {
+            if (!fsExists(file)) {
                 return false;
             }
             const context = createOperationContext('delete', this.source, [file]);
@@ -514,7 +514,7 @@ export class VirtualAsset {
         } else {
             file = join(this.library, extOrFile);
         }
-        return await fsExists(file);
+        return fsExists(file);
     }
 
     /**
@@ -664,7 +664,7 @@ export class Asset extends VirtualAsset {
      */
     async save() {
         if (
-            !await fsExists(this.source) // 如果源文件被删除了，则不需要继续保存
+            !fsExists(this.source) // 如果源文件被删除了，则不需要继续保存
         ) {
             return false;
         }

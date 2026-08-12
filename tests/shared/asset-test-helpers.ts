@@ -1,4 +1,4 @@
-import { existsSync } from 'fs-extra';
+import { pathExistsSync } from '../../src/core/filesystem';
 import { join } from 'path';
 import { expect } from '@jest/globals';
 
@@ -42,7 +42,7 @@ export function validateAssetCreated(
  * 验证资源文件是否存在
  */
 export function validateAssetFileExists(filePath: string): void {
-    expect(existsSync(filePath)).toBe(true);
+    expect(pathExistsSync(filePath)).toBe(true);
 }
 
 /**
@@ -50,7 +50,7 @@ export function validateAssetFileExists(filePath: string): void {
  */
 export function validateAssetMetaExists(filePath: string): void {
     const metaPath = `${filePath}.meta`;
-    expect(existsSync(metaPath)).toBe(true);
+    expect(pathExistsSync(metaPath)).toBe(true);
 }
 
 /**
@@ -91,8 +91,8 @@ export function validateFileAsset(
  * 验证资源删除结果
  */
 export function validateAssetDeleted(filePath: string): void {
-    expect(existsSync(filePath)).toBe(false);
-    expect(existsSync(`${filePath}.meta`)).toBe(false);
+    expect(pathExistsSync(filePath)).toBe(false);
+    expect(pathExistsSync(`${filePath}.meta`)).toBe(false);
 }
 
 /**
@@ -182,7 +182,7 @@ export function compareAssetUUID(asset1: AssetCreationResult, asset2: AssetCreat
  * 验证资源元数据
  */
 export function validateAssetMeta(metaPath: string, expectedFields: Record<string, any>): void {
-    expect(existsSync(metaPath)).toBe(true);
+    expect(pathExistsSync(metaPath)).toBe(true);
 
     const meta = require('fs-extra').readJSONSync(metaPath);
 

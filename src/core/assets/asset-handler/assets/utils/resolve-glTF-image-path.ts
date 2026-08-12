@@ -1,5 +1,6 @@
 import ps from 'path';
 import fs from 'fs-extra';
+import { pathExistsAsync } from '../../../../filesystem';
 
 /**
  * 解析 glTF 图像的真实路径。
@@ -16,7 +17,7 @@ export async function resolveGlTfImagePath(
     extras: any,
     jail: string,
 ) {
-    if (expectedPath && (await fs.pathExists(expectedPath))) {
+    if (expectedPath && (await pathExistsAsync(expectedPath))) {
         // 如果原始路径本身就存在，就直接使用该路径。
         return expectedPath;
     }
@@ -36,12 +37,12 @@ export async function resolveGlTfImagePath(
 
     if (fbxGlTfConvImageExtrasRelativeFileName) {
         const path = ps.join(glTFDir, fbxGlTfConvImageExtrasRelativeFileName);
-        if (await fs.pathExists(path)) {
+        if (await pathExistsAsync(path)) {
             return path;
         }
     }
 
-    if (fbxGlTfConvImageExtrasFileName && (await fs.pathExists(fbxGlTfConvImageExtrasFileName))) {
+    if (fbxGlTfConvImageExtrasFileName && (await pathExistsAsync(fbxGlTfConvImageExtrasFileName))) {
         return fbxGlTfConvImageExtrasFileName;
     }
 
@@ -156,7 +157,7 @@ function toNormalizedAbsolute(p: string) {
 }
 
 async function fuzzySearchTexture(directory: string, baseNames: string[], extensions: string[]) {
-    if (!(await fs.pathExists(directory))) {
+    if (!(await pathExistsAsync(directory))) {
         return null;
     }
     const dirItems = await fs.readdir(directory);

@@ -1,8 +1,10 @@
+import { pathExistsSync } from '../../../../filesystem';
 'use strict';
 
 import path from 'path';
 import os from 'os';
-import { accessSync, existsSync, constants, outputJSON } from 'fs-extra';
+import { accessSync, constants } from 'fs-extra';
+import { outputJSONAsync as outputJSON } from '../../../../filesystem';
 import * as nativeCommonHook from '../../native-common/hooks';
 import { BuilderCache, IBuilder } from '../../../@types/protected';
 export const throwError = true;

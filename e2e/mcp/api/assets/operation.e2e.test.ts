@@ -1,5 +1,6 @@
 import { join, extname } from 'path';
-import { outputFile, readFileSync, existsSync } from 'fs-extra';
+import { outputFile, readFileSync } from 'fs-extra';
+import { pathExistsSync } from '../../../../src/core/filesystem';
 import { v4 as uuidv4 } from 'node-uuid';
 import { AssetsTestContext, generateTestId, setupAssetsTestEnvironment, teardownAssetsTestEnvironment } from '../../../helpers/test-utils';
 
@@ -139,12 +140,12 @@ describe('MCP Assets API - Operation', () => {
 
             if (result.data) {
                 // 原始文件应该保持不变
-                expect(existsSync(filePath)).toBeTruthy();
+                expect(pathExistsSync(filePath)).toBeTruthy();
                 expect(readFileSync(filePath, 'utf8')).toEqual('original content');
 
                 // 新文件应该被创建在不同的位置
                 expect(result.data.file).not.toBe(filePath);
-                expect(existsSync(result.data.file)).toBeTruthy();
+                expect(pathExistsSync(result.data.file)).toBeTruthy();
                 expect(readFileSync(result.data.file, 'utf8')).toEqual('createAssetRename');
             }
         });
@@ -170,7 +171,7 @@ describe('MCP Assets API - Operation', () => {
 
             if (result.data) {
                 // 文件应该被覆盖
-                expect(existsSync(filePath)).toBeTruthy();
+                expect(pathExistsSync(filePath)).toBeTruthy();
                 expect(readFileSync(filePath, 'utf8')).toEqual('createAssetOverwrite');
             }
         });
@@ -196,7 +197,7 @@ describe('MCP Assets API - Operation', () => {
             expect(result.reason).toBeDefined();
 
             // 原始文件应该保持不变
-            expect(existsSync(filePath)).toBeTruthy();
+            expect(pathExistsSync(filePath)).toBeTruthy();
             expect(readFileSync(filePath, 'utf8')).toEqual('original content');
         });
 
@@ -221,7 +222,7 @@ describe('MCP Assets API - Operation', () => {
 
                 // 验证内容应该是 content 的值，而不是 template 的内容
                 const filePath = join(context.testRootPath, fileName);
-                expect(existsSync(filePath)).toBeTruthy();
+                expect(pathExistsSync(filePath)).toBeTruthy();
                 expect(readFileSync(filePath, 'utf8')).toEqual('test');
             }
         });
@@ -561,7 +562,7 @@ export class CorrectComponent extends Component {
             expect(saveResult.code).toBe(200);
 
             // 验证文件内容已更新为正确的内容
-            expect(existsSync(scriptPath)).toBeTruthy();
+            expect(pathExistsSync(scriptPath)).toBeTruthy();
             expect(readFileSync(scriptPath, 'utf8')).toEqual(correctScriptContent);
         });
     });

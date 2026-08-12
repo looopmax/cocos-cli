@@ -1,8 +1,8 @@
 'use strict';
 
 import type { VirtualAsset } from './asset';
-import { existsSync, readJSONSync, outputJSONSync } from 'fs-extra';
 import { CustomConsole } from './console';
+import { fsExists, outputJSONSync, readJSONSync } from './filesystem';
 
 export interface IData {
     url: string; // 文件的路径
@@ -34,7 +34,7 @@ export class DataManager {
      */
     async setRecordJSON(json: string) {
         this.file = json;
-        if (existsSync(json)) {
+        if (fsExists(json)) {
             try {
                 this.dataMap = readJSONSync(this.file);
             } catch (error) {

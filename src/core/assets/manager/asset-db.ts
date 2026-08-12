@@ -4,7 +4,7 @@ import { AssetDBRegisterInfo, IAsset, IAssetDBInfo, IAssetInfo, QueryAssetsOptio
 import * as assetdb from '@cocos/asset-db';
 import type { IAssetFileSystemProvider } from '@cocos/asset-db';
 import EventEmitter from 'events';
-import { ensureDirSync, existsSync } from 'fs-extra';
+import { ensureDirSync } from 'fs-extra';
 import { extname, join, relative } from 'path';
 import { newConsole } from '../../base/console';
 import { decidePromiseState, PROMISE_STATE } from '../utils';
@@ -17,6 +17,7 @@ import assetConfig from '../asset-config';
 import scripting from '../../scripting';
 import { AssetChangeInfo, DBChangeType } from '../../scripting/packer-driver/asset-db-interop';
 import { AssetActionEnum } from '@cocos/asset-db';
+import { pathExistsAsync as pathExists } from '../../filesystem';
 
 const AssetDBPriority: Record<string, number> = {
     internal: 99,
@@ -106,12 +107,10 @@ class AssetDBManager extends EventEmitter {
         // TODO 版本升级资源应该只认自身记录的版本号
         // if (AssetDBManager.useCache && Project.info.version !== Project.info.lastVersion) {
         //     AssetDBManager.useCache = false;
-        //     console.log(i18n.t('assets.restoreAssetDBFromCacheInValid.upgrade'));
         // }
 
-        if (AssetDBManager.useCache && !existsSync(AssetDBManager.libraryRoot)) {
+        if (AssetDBManager.useCache && !await pathExists(AssetDBManager.libraryRoot)) {
             AssetDBManager.useCache = false;
-            console.log(i18n.t('assets.restore_asset_d_b_from_cache_in_valid.no_library_path'));
         }
         await this.pluginManager.init();
         await this.assetHandlerManager.init();
@@ -184,7 +183,7 @@ class AssetDBManager extends EventEmitter {
         const assetDBNames = Object.keys(this.assetDBInfo).sort((a, b) => (AssetDBPriority[b] || 0) - (AssetDBPriority[a] || 0));
         for (const assetDBName of assetDBNames) {
             const db = await this._createDB(this.assetDBInfo[assetDBName]);
-            if (existsSync(db.cachePath)) {
+            if (await pathExists(db.cachePath)) {
                 try {
                     await db.startWithCache();
                     this.assetDBInfo[assetDBName].state = 'startup';
@@ -392,9 +391,6 @@ class AssetDBManager extends EventEmitter {
      */
     async removeDB(name: string) {
         if (this.isPause) {
-            console.log(i18n.t('assets.asset_d_b_pause_tips',
-                { operate: 'removeDB' }
-            ));
             return new Promise((resolve, reject) => {
                 this._addTaskToQueue({
                     func: this._removeDB.bind(this),
@@ -445,11 +441,6 @@ class AssetDBManager extends EventEmitter {
             return;
         }
         if (this.state !== 'free' || this.isPause || this.assetBusy) {
-            if (this.isPause) {
-                console.log(i18n.t('assets.asset_d_b_pause_tips',
-                    { operate: 'refresh' }
-                ));
-            }
             return new Promise((resolve, reject) => {
                 this._addTaskToQueue({
                     func: this._refresh.bind(this),
@@ -531,9 +522,6 @@ class AssetDBManager extends EventEmitter {
 
     async addTask(func: Function, args: any[]): Promise<any> {
         if (this.isPause || this.state === 'busy') {
-            console.log(i18n.t('assets.asset_d_b_pause_tips',
-                { operate: func.name }
-            ));
             return new Promise((resolve, reject) => {
                 this._addTaskToQueue({
                     func,
@@ -640,7 +628,6 @@ class AssetDBManager extends EventEmitter {
         if (!this.isBusy()) {
             this.hasPause = true;
             this.emit('assets:pause', source);
-            console.log(`Asset DB is paused with ${source}!`);
             return true;
         }
         if (!this.hasPause) {
@@ -650,7 +637,6 @@ class AssetDBManager extends EventEmitter {
             this.waitPauseHandle = () => {
                 this.waitPausePromiseTask = undefined;
                 this.emit('assets:pause', source);
-                console.log(`Asset DB is paused with ${source}!`);
                 this.hasPause = true;
                 resolve(true);
             };

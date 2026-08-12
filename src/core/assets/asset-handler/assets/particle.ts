@@ -1,8 +1,9 @@
+import { pathExistsSync } from '../../../filesystem';
 'use strict';
 
 import { Asset } from '@cocos/asset-db';
 import { changeImageDefaultType } from './utils/image-utils';
-import { existsSync, readFile } from 'fs-extra';
+import { readFile } from 'fs-extra';
 import { basename, dirname, extname, join } from 'path';
 import { Color, Vec2, gfx, ParticleSystem2D, SpriteFrame } from 'cc';
 
@@ -160,7 +161,7 @@ export const ParticleHandler: AssetHandler = {
 
                     asset.depend(texturePath);
                     const uuid = asset._assetDB.pathToUuid(texturePath);
-                    if (existsSync(texturePath)) {
+                    if (pathExistsSync(texturePath)) {
                         if (uuid) {
                             const textureAsset = asset._assetDB.getAsset(uuid);
                             await changeImageDefaultType(textureAsset, 'sprite-frame');

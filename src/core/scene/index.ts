@@ -9,6 +9,7 @@ export { sceneConfigInstance };
 import { middlewareService } from '../../server/middleware';
 import SceneMiddleware from './scene.middleware';
 import SceneScriptingMiddleware from './scene.scripting.middleware';
+import { pathExistsAsync, readJSONAsync } from '../filesystem';
 
 const i18nModules: Record<string, () => Promise<any>> = {
     zh: () => import('./i18n/zh'),
@@ -97,8 +98,8 @@ async function watchCollisionGroupsChange() {
     const readGroupsFromDisk = async (): Promise<{ index: number; name: string }[] | null> => {
         try {
             const configPath = await configurationManager.getConfigPath();
-            if (await fse.pathExists(configPath)) {
-                const json = await fse.readJSON(configPath);
+            if (await pathExistsAsync(configPath)) {
+                const json = await readJSONAsync(configPath);
                 const disk = json?.engine?.physicsConfig?.collisionGroups;
                 if (Array.isArray(disk)) {
                     return disk;

@@ -1,3 +1,4 @@
+import { readFileUtf8Sync } from './';
 import fs from 'fs';
 import { EOL } from 'os';
 import eol from 'eol';
@@ -226,7 +227,7 @@ export function findTextOccurrencesInFile(
     const searchStrLen = targetText.length;
 
     // Read the entire file content as a string
-    const str = fs.readFileSync(filename, 'utf8');
+    const str = readFileUtf8Sync(filename);
 
     let index = -1;
     let startIndex = 0;

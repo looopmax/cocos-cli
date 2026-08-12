@@ -1,7 +1,9 @@
+import { pathExistsSync } from '../core/filesystem';
 import chalk from 'chalk';
 import { BaseCommand, CommandUtils } from './base';
 import { IBuildCommandOption, BuildExitCode } from '../core/builder/@types/protected';
-import { existsSync, readJSONSync } from 'fs-extra';
+
+import { readJSONSync } from '../core/filesystem';
 import { openImageAsset } from '../core/assets/asset-handler/assets/image/utils';
 
 /**
@@ -22,7 +24,7 @@ export class BuildCommand extends BaseCommand {
                     const resolvedPath = this.validateProjectPath(options.project);
 
                     if (options.buildConfig) {
-                        if (!existsSync(options.buildConfig)) {
+                        if (!pathExistsSync(options.buildConfig)) {
                             console.error(`config: ${options.buildConfig} is not exist!`);
                             process.exit(BuildExitCode.BUILD_FAILED);
                         }

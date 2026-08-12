@@ -1,5 +1,6 @@
+import { pathExistsSync } from '../../../filesystem';
 import { Asset, queryUrl } from '@cocos/asset-db';
-import { ensureDirSync, existsSync, outputFileSync, readdirSync, readFile, statSync } from 'fs-extra';
+import { ensureDirSync, outputFileSync, readdirSync, readFile, statSync } from 'fs-extra';
 import { basename, dirname, extname, join } from 'path';
 import { i18nTranslate, openCode } from '../utils';
 // import { dirname, normalize } from 'path';
@@ -45,13 +46,13 @@ export const TypeScriptHandler: AssetHandler = {
             const guideFileName = 'Custom Script Template Help Documentation.url';
             const guideFile = join(templateDir, guideFileName);
 
-            if (!existsSync(guideFile)) {
+            if (!pathExistsSync(guideFile)) {
                 const content =
                     '[InternetShortcut]\nURL=https://docs.cocos.com/creator/manual/en/scripting/setup.html#custom-script-template';
                 outputFileSync(guideFile, content);
             }
 
-            if (existsSync(templateDir)) {
+            if (pathExistsSync(templateDir)) {
                 const names = readdirSync(templateDir);
                 names.forEach((name: string) => {
                     const filePath = join(templateDir, name);

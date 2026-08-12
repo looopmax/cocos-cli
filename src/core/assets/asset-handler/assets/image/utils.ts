@@ -1,7 +1,8 @@
+import { pathExistsSync } from '../../../../filesystem';
 import { Asset, VirtualAsset } from '@cocos/asset-db';
 import { IAsset, ThumbnailInfo } from '../../../@types/protected';
 import { ImageAsset, Rect } from 'cc';
-import { existsSync, readFile } from 'fs-extra';
+import { readFile } from 'fs-extra';
 import { join } from 'path';
 import Sharp from 'sharp';
 import {

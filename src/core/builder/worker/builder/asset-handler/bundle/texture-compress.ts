@@ -1,4 +1,5 @@
-import { existsSync, copy, remove } from 'fs-extra';
+import { pathExistsSync } from '../../../../../filesystem';
+import { copy, remove } from 'fs-extra';
 import { basename, join } from 'path';
 import { buildAssetLibrary } from '../../manager/asset-library';
 import { TextureCompress } from '../texture-compress';
@@ -28,7 +29,7 @@ export async function bundleOutputTask(bundle: IBundle, cache: BuilderAssetCache
         const realSuffix: string[] = [];
         bundle.compressRes[uuid] = [];
         await Promise.all(task.dest.map(async (path, index) => {
-            if (!existsSync(path)) {
+            if (!pathExistsSync(path)) {
                 return;
             }
             const dest = join(bundle.dest, bundle.nativeBase, uuid.substr(0, 2), basename(path));

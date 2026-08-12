@@ -1,4 +1,5 @@
-import { existsSync, readFileSync } from 'fs';
+import { readFileUtf8Sync } from '../filesystem';
+import { existsSync } from 'fs';
 import path from 'path';
 import lodash from 'lodash';
 import ts from 'typescript';
@@ -526,7 +527,7 @@ function normalizeDocText(text: string | undefined): string | undefined {
 }
 
 function readUtf8File(filePath: string): string {
-    return readFileSync(filePath, 'utf8').replace(/^\uFEFF/, '');
+    return readFileUtf8Sync(filePath).replace(/^\uFEFF/, '');
 }
 
 function normalizeFlagValue(value: unknown): FlagValue {

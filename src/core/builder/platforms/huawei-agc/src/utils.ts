@@ -1,6 +1,7 @@
 'use strict';
 
-import { copy, ensureDir, pathExists, readJSON } from 'fs-extra';
+import { copy, ensureDir } from 'fs-extra';
+import { pathExistsAsync as pathExists, readJSONAsync as readJSON } from '../../../../filesystem';
 import { fileURLToPath } from 'node:url';
 import { join, resolve } from 'path';
 

@@ -9,6 +9,7 @@ import { configurationRegistry, ConfigurationScope, IBaseConfiguration } from '.
 import Utils from '../../base/utils';
 import { ScriptProjectConfig } from '../@types/config-export';
 import { createScriptMetadataNodes } from './metadata';
+import { readJSONAsync } from '../../filesystem';
 
 export interface SharedSettings extends Pick<ScriptProjectConfig, 'useDefineForClassFields' | 'allowDeclareFields' | 'loose' | 'guessCommonJsExports' | 'exportsConditions'> {
     useDefineForClassFields: boolean;
@@ -92,7 +93,7 @@ export async function querySharedSettings(logger: Logger): Promise<SharedSetting
         const importMapFilePath = Utils.Path.resolveToRaw(importMapFile);
         if (importMapFilePath && existsSync(importMapFilePath)) {
             try {
-                const importMapJson = await fs.readJson(importMapFilePath, { encoding: 'utf8' }) as unknown;
+                const importMapJson = await readJSONAsync(importMapFilePath) as unknown;
                 if (!verifyImportMapJson(importMapJson)) {
                     logger.error('Ill-formed import map.');
                 } else {

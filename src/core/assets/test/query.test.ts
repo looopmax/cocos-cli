@@ -6,9 +6,10 @@ import { globalSetup } from '../../test/global-setup';
 import { TestGlobalEnv } from '../../../tests/global-env';
 import assetOperation from '../manager/operation';
 import { ICreateMenuInfo } from '../@types/protected';
+import { pathExistsSync } from '../../filesystem';
 
 const { join, extname } = require('path');
-const { existsSync, remove } = require('fs-extra');
+const { remove } = require('fs-extra');
 
 const assetTestRoot = TestGlobalEnv.testRoot;
 
@@ -96,7 +97,7 @@ describe('测试 db 的查询接口', function () {
                             expect(assetInfo.source).toBe(targetUrl);
                         });
                         it('创建文件存在', () => {
-                            expect(existsSync(target)).toBe(true);
+                            expect(pathExistsSync(target)).toBe(true);
                         });
                         it(`创建文件使用的 importer(${assetInfo.importer}) 类型与预期的 ${info.handler}符合`, () => {
                             expect(assetInfo.importer).toBe(info.handler);
@@ -128,13 +129,13 @@ describe('测试 db 的查询接口', function () {
     describe('query-path', function () {
         it('查询 assets 数据库', async function () {
             const path = await assetManager.queryPath('db://assets');
-            const exists = existsSync(path);
+            const exists = pathExistsSync(path);
             expect(exists).toBe(true);
         });
         it('查询 internal 数据库', async function () {
             const path = await assetManager.queryPath('db://internal');
             expect(path).not.toBeNull();
-            const exists = existsSync(path);
+            const exists = pathExistsSync(path);
             expect(exists).toBe(true);
         });
         it('查询不存在的数据库', async function () {
@@ -144,13 +145,13 @@ describe('测试 db 的查询接口', function () {
         it('查询 assets 数据库里测试生成的临时资源', async function () {
             const path = await assetManager.queryPath(`db://assets/${name}`);
             expect(path).not.toBeNull();
-            const exists = existsSync(path);
+            const exists = pathExistsSync(path);
             expect(exists).toBe(true);
         });
         it('查询 assets 数据库里不存在的资源', async function () {
             const path = await assetManager.queryPath(`db://assets/${name}.xxx`);
             expect(path).not.toBeNull();
-            const exists = existsSync(path);
+            const exists = pathExistsSync(path);
             expect(exists).toBe(false);
         });
     });

@@ -1,6 +1,6 @@
 'use strict';
 
-import { readdir, stat, existsSync, Stats, statSync, readdirSync } from 'fs-extra';
+import { readdir, stat, Stats, statSync, readdirSync } from 'fs-extra';
 import { isAbsolute, resolve, normalize, join, relative, sep } from 'path';
 import { createHash } from 'crypto';
 

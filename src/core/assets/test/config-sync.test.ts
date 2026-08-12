@@ -1,7 +1,9 @@
+import { pathExistsSync } from '../../filesystem';
 'use strict';
 
 import { join } from 'path';
-import { ensureDir, existsSync, readJSONSync, remove, writeJSONSync } from 'fs-extra';
+import { ensureDir, remove } from 'fs-extra';
+import { outputJSONSync, readJSONSync } from '../../filesystem';
 import { TestGlobalEnv } from '../../../tests/global-env';
 
 interface IAssetConfigRuntime {
@@ -35,7 +37,7 @@ function createImportConfig(customTemplateRoot: string) {
 function writeProjectImportConfig(importConfig: Record<string, unknown>) {
     const nextConfig = JSON.parse(JSON.stringify(originalConfig));
     nextConfig.import = importConfig;
-    writeJSONSync(configPath, nextConfig, { spaces: 4 });
+    outputJSONSync(configPath, nextConfig, { spaces: 4 });
 }
 
 function writeProjectScriptConfig(scriptConfig: Record<string, unknown>) {
@@ -44,7 +46,7 @@ function writeProjectScriptConfig(scriptConfig: Record<string, unknown>) {
         ...nextConfig.script,
         ...scriptConfig,
     };
-    writeJSONSync(configPath, nextConfig, { spaces: 4 });
+    outputJSONSync(configPath, nextConfig, { spaces: 4 });
 }
 
 function waitForAsyncListeners(): Promise<void> {
@@ -76,10 +78,10 @@ async function loadFreshRuntime(): Promise<IAssetConfigRuntime> {
 
 describe('asset import config sync', () => {
     afterEach(async () => {
-        writeJSONSync(configPath, JSON.parse(JSON.stringify(originalConfig)), { spaces: 4 });
+        outputJSONSync(configPath, JSON.parse(JSON.stringify(originalConfig)), { spaces: 4 });
         await remove(legacyTemplateRoot);
         const creatorRoot = join(TestGlobalEnv.projectRoot, '.creator');
-        if (existsSync(creatorRoot)) {
+        if (pathExistsSync(creatorRoot)) {
             const entries = require('fs').readdirSync(creatorRoot);
             for (const entry of entries) {
                 if (entry.startsWith('custom-template-root-')) {
@@ -129,8 +131,8 @@ describe('asset import config sync', () => {
 
         await runtime.assetHandlerManager.getCreateMenuByName('typescript');
 
-        expect(existsSync(configuredGuideFile)).toBe(true);
-        expect(existsSync(legacyGuideFile)).toBe(false);
+        expect(pathExistsSync(configuredGuideFile)).toBe(true);
+        expect(pathExistsSync(legacyGuideFile)).toBe(false);
     });
 
     it('should sync project script sortingPlugin after script config registers', async () => {

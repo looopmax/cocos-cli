@@ -2,7 +2,7 @@
 
 declare const cc: any;
 
-import { readJSON } from 'fs-extra';
+import { readJSONAsync as readJSON } from '../filesystem';
 import cloneDeep from 'lodash/cloneDeep';
 import isEqual from 'lodash/isEqual';
 import { deserialize as deserializeAssetSource } from './asset-handler/utils';

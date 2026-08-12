@@ -1,6 +1,7 @@
+import { pathExistsSync } from '../../../../filesystem';
 'use strict';
 import { IHarmonyOSNextInternalBuildOptions } from './type';
-import { existsSync } from 'fs-extra';
+
 import { join } from 'path';
 
 /**
@@ -24,7 +25,7 @@ export async function generateOptions(options: IHarmonyOSNextInternalBuildOption
         if (!ohos.ndkPath && ohos.sdkPath) {
             // ndk和sdk是绑定的，不需要指定ndk的版本
             const ndkPath = join(ohos.sdkPath, 'native');
-            if (existsSync(ndkPath)) {
+            if (pathExistsSync(ndkPath)) {
                 ohos.ndkPath = ndkPath;
                 console.log(`[HarmonyOS Next] Auto-detected NDK at: ${ohos.ndkPath}`);
             }

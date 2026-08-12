@@ -1,3 +1,5 @@
+import { pathExistsSync } from '../../../filesystem';
+import { readFileUtf8Sync } from '../../../filesystem';
  
 
 import { Asset, AssetDB, forEach } from '@cocos/asset-db';
@@ -12,7 +14,8 @@ import {
     buildLayoutGraphData,
     getLayoutGraphDataVersion,
 } from 'cc/editor/custom-pipeline';
-import { existsSync, readFileSync, readdirSync, writeFileSync, ensureDir, readJSON, writeFile } from 'fs-extra';
+import { readFileSync, readdirSync, ensureDir, writeFile } from 'fs-extra';
+import { readJSONAsync as readJSON } from '../../../filesystem';
 import { basename, dirname, extname, join, relative, resolve } from 'path';
 import { buildEffect, options, addChunk } from '../../effect-compiler';
 
@@ -42,11 +45,11 @@ options.chunkSearchFn = (names: string[]) => {
             // user input path first
             const name = names[i];
             const file = resolve(db.options.target, 'chunks', name + '.chunk');
-            if (!existsSync(file)) {
+            if (!pathExistsSync(file)) {
                 continue;
             }
             res.name = name;
-            res.content = readFileSync(file, { encoding: 'utf-8' });
+            res.content = readFileUtf8Sync(file);
             break;
         }
     });
@@ -165,7 +168,7 @@ async function generateEffectAsset(asset: IAsset, assetSourceFile: string, effec
     const path = relative(join(target, 'effects'), closure.dir).replace(/\\/g, '/');
     const name = path + (path.length ? '/' : '') + basename(effectSourceFile, extname(effectSourceFile));
 
-    const content = readFileSync(effectSourceFile, { encoding: 'utf-8' });
+    const content = readFileUtf8Sync(effectSourceFile);
     const effect = buildEffect(name, content);
 
     // 记录 effect 的头文件依赖
@@ -220,7 +223,7 @@ function _rebuildDescriptorHierarchy(effectArray: Asset[]) {
         const tempFile = join(effectAsset.temp, 'materialxxx.json');
         // 这个 temp 文件夹在资源重新导入的时候，会被清空
         // 所以判断我们的缓存是否存在，就可以知道这个资源有没有被修改，需不需要重新计算
-        if (existsSync(tempFile)) {
+        if (pathExistsSync(tempFile)) {
             // 跳过之前已经计算的 effect
             continue;
         }
@@ -297,16 +300,16 @@ function collectPrebuiltEffects(): Array<{ imported: boolean; library: string }>
     for (const dbInfo of assetConfig.data.assetDBList) {
         if (!dbInfo.library) continue;
         const effectsDir = join(dbInfo.target, 'effects');
-        if (!existsSync(effectsDir)) continue;
+        if (!pathExistsSync(effectsDir)) continue;
         try {
             const allFiles = readdirSync(effectsDir, { recursive: true, encoding: 'utf-8' });
             for (const relFile of allFiles) {
                 if (!relFile.endsWith('.effect.meta')) continue;
                 try {
-                    const meta = JSON.parse(readFileSync(join(effectsDir, relFile), 'utf-8'));
+                    const meta = JSON.parse(readFileUtf8Sync(join(effectsDir, relFile)));
                     if (meta.importer !== 'effect' || !meta.imported || !meta.uuid) continue;
                     const libraryPath = join(dbInfo.library!, meta.uuid.substring(0, 2), meta.uuid);
-                    if (!existsSync(libraryPath + '.json')) continue;
+                    if (!pathExistsSync(libraryPath + '.json')) continue;
                     effects.push({ imported: true, library: libraryPath });
                 } catch { /* skip invalid meta */ }
             }
@@ -375,7 +378,7 @@ function forceRecompileEffects(file: string): boolean {
 export async function recompileAllEffects(effectArray: Asset[], force?: boolean) {
     const file = autoGenEffectBinInfo.effectBinPath;
     // 存在等待刷新的指令或者 effect.bin 不存在时，就重新生成
-    if (force || autoGenEffectBinInfo.waitingGenEffectBin || !existsSync(file) || forceRecompileEffects(file)) {
+    if (force || autoGenEffectBinInfo.waitingGenEffectBin || !pathExistsSync(file) || forceRecompileEffects(file)) {
         // 仅编译导入正常的 effect
         effectArray = effectArray.filter((asset) => asset.imported);
         autoGenEffectBinInfo.waitingGenEffectBin = false;

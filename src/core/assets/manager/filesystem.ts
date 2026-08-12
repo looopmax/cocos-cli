@@ -1,7 +1,8 @@
+import { pathExistsSync } from '../../filesystem';
 'use strict';
 
 import type { IAssetFileSystemProvider, IAssetRenameOptions, IAssetWriteFileOptions } from '@cocos/asset-db';
-import { copy as fsCopy, ensureDir, existsSync, move, outputFile, readFile as fsReadFile, remove } from 'fs-extra';
+import { copy as fsCopy, ensureDir, move, outputFile, readFile as fsReadFile, remove } from 'fs-extra';
 import { dirname, join, relative } from 'path';
 import type { IMoveOptions } from '../@types/private';
 import type { DeleteAssetOptions } from '../@types/public';
@@ -110,7 +111,7 @@ export async function copyPath(sourcePath: string, destinationPath: string, opti
 }
 
 export async function removeAssetSource(file: string, options: DeleteAssetOptions = {}): Promise<boolean> {
-    if (!existsSync(file)) {
+    if (!pathExistsSync(file)) {
         return true;
     }
 
@@ -127,7 +128,7 @@ export async function removeAssetSource(file: string, options: DeleteAssetOption
 
     try {
         const metaFile = file + '.meta';
-        if (existsSync(metaFile)) {
+        if (pathExistsSync(metaFile)) {
             await deletePath(metaFile, deleteOptions);
         }
     } catch (error) {
@@ -153,10 +154,10 @@ export async function moveAssetSource(source: string, target: string, options?: 
         const tempPath = join(tempDir, relativePath);
         const tempMetaPath = tempPath + '.meta';
 
-        if (existsSync(tempPath)) {
+        if (pathExistsSync(tempPath)) {
             await deletePath(tempPath, { useTrash: false });
         }
-        if (existsSync(tempMetaPath)) {
+        if (pathExistsSync(tempMetaPath)) {
             await deletePath(tempMetaPath, { useTrash: false });
         }
 

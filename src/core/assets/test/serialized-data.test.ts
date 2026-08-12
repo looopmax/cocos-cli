@@ -26,7 +26,8 @@ jest.mock('gl', () => {
 });
 
 import { join } from 'path';
-import { readFileSync, readJSONSync, remove } from 'fs-extra';
+import { readFileSync, remove } from 'fs-extra';
+import { readJSONSync } from '../../filesystem';
 import { globalSetup } from '../../test/global-setup';
 import { TestGlobalEnv } from '../../../tests/global-env';
 import { assetManager } from '..';

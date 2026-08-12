@@ -1,5 +1,6 @@
+import { pathExistsSync } from '../../../../filesystem';
 import { Asset } from '@cocos/asset-db';
-import { existsSync, readFile } from 'fs-extra';
+import { readFile } from 'fs-extra';
 import { checkSize } from '../erp-texture-cube';
 import { convertTGA, convertPSD, convertTIFF, convertHDROrEXR, convertHDR } from './image-mics';
 import Sharp from 'sharp';
@@ -104,11 +105,11 @@ export const ImageHandler: AssetHandler = {
                     userData.type = 'texture cube';
                 }
                 const signFile = join(converted.source.replace('.png', '_sign.png'));
-                if (existsSync(signFile)) {
+                if (pathExistsSync(signFile)) {
                     userData.sign = utils.Path.resolveToUrl(signFile, 'project');
                 }
                 const alphaFile = join(converted.source.replace('.png', '_alpha.png'));
-                if (existsSync(alphaFile)) {
+                if (pathExistsSync(alphaFile)) {
                     userData.alpha = utils.Path.resolveToUrl(alphaFile, 'project');
                 }
             } else if (extName === '.tga') {

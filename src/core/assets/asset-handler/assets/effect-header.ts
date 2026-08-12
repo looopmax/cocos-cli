@@ -1,6 +1,7 @@
+import { readFileUtf8Sync } from '../../../filesystem';
 import { Asset } from '@cocos/asset-db';
 import { AssetHandler } from '../../@types/protected';
-import { readFileSync, readdirSync, statSync } from 'fs-extra';
+import { readdirSync, statSync } from 'fs-extra';
 import { basename, dirname, extname, join, relative } from 'path';
 import { addChunk } from '../../effect-compiler';
 import { Engine } from '../../../engine';
@@ -26,7 +27,7 @@ const builtinChunks = (() => {
 
 for (let i = 0; i < builtinChunks.length; ++i) {
     const name = basename(builtinChunks[i], '.chunk');
-    const content = readFileSync(builtinChunks[i], { encoding: 'utf8' });
+    const content = readFileUtf8Sync(builtinChunks[i]);
     addChunk(name, content);
 }
 
@@ -67,7 +68,7 @@ export const EffectHeaderHandler: AssetHandler = {
                 const path = relative(join(target, 'chunks'), dirname(asset.source)).replace(/\\/g, '/');
                 const name = path + (path.length ? '/' : '') + basename(asset.source, extname(asset.source));
 
-                const content = readFileSync(asset.source, { encoding: 'utf-8' });
+                const content = readFileUtf8Sync(asset.source);
                 addChunk(name, content);
 
                 return true;

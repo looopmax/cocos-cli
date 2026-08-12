@@ -1,5 +1,7 @@
+import { pathExistsSync } from '../../../../../filesystem';
 import { Asset, VirtualAsset } from '@cocos/asset-db';
-import { emptyDirSync, existsSync, outputJSONSync, readJSONSync } from 'fs-extra';
+import { emptyDirSync } from 'fs-extra';
+import { outputJSONSync, readJSONSync } from '../../../../../filesystem';
 import lodash from 'lodash';
 import { dirname, join } from 'path';
 import { buildAssetLibrary } from '../../manager/asset-library';
@@ -99,7 +101,7 @@ export class TexturePacker {
             newStoredPacInfo: TexturePacker.genNewStoredInfo(pacInfo),
             storedPacInfo: null,
         };
-        if (!existsSync(storedPacInfoPath)) {
+        if (!pathExistsSync(storedPacInfoPath)) {
             return res;
         }
         try {
@@ -137,7 +139,7 @@ export class TexturePacker {
         try {
             for (const atlas of storedPacInfo!.result!.atlases) {
                 // 需要检查所有缓存的图集资源是否依旧正常存在
-                if (!existsSync(atlas.imagePath)) {
+                if (!pathExistsSync(atlas.imagePath)) {
                     dirty = true;
                     break;
                 }

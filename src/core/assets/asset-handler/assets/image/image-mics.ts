@@ -1,10 +1,11 @@
+import { pathExistsSync } from '../../../../filesystem';
 'use strict';
 
 import { join, dirname, basename, sep, normalize } from 'path';
 
 import { PNG } from 'pngjs';
 import TGA from 'tga-js';
-import { ensureDirSync, existsSync } from 'fs-extra';
+import { ensureDirSync } from 'fs-extra';
 import PSD from 'psd.js';
 import Sharp from 'sharp';
 import { GlobalPaths } from '../../../../../global';
@@ -118,10 +119,10 @@ export async function convertHDR(source: string, uuid: string, temp: string) {
 export async function convertWithCmft(file: string, dist: string, version = ''): Promise<{ extName: string; source: string }> {
     // https://github.com/dariomanesku/cmft
     let tools = join(GlobalPaths.staticDir, `tools/cmft/cmftRelease64${version}${process.platform === 'win32' ? '.exe' : ''}`);
-    if (!existsSync(tools)) {
+    if (!pathExistsSync(tools)) {
         tools = join(GlobalPaths.staticDir, `tools/cmft/cmft${version}${process.platform === 'win32' ? '.exe' : ''}`);
     }
-    if (!existsSync(tools)) {
+    if (!pathExistsSync(tools)) {
         tools = join(GlobalPaths.staticDir, `tools/cmft/cmftRelease64${process.platform === 'win32' ? '.exe' : ''}`);
     }
     await utils.Process.quickSpawn(tools, [

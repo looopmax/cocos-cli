@@ -3,6 +3,7 @@ import os from 'os';
 import fse from 'fs-extra';
 import { CocosCreatorConfigScope, COCOS_CREATOR_VERSION } from './types';
 import { newConsole } from '../../base/console';
+import { pathExistsAsync, readJSONAsync } from '../../filesystem';
 
 /**
  * CocosCreator 旧配置加载器
@@ -51,9 +52,9 @@ export class CocosConfigLoader {
         }
 
         const pkgPath = this.getPathByScope(pkgName, scope);
-        if (await fse.pathExists(pkgPath)) {
+        if (await pathExistsAsync(pkgPath)) {
             try {
-                const pkg = await fse.readJSON(pkgPath);
+                const pkg = await readJSONAsync(pkgPath);
                 const configs = this.configMap.get(scope) || {};
                 configs[pkgName] = pkg;
                 this.configMap.set(scope, configs);

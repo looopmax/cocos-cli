@@ -3,7 +3,8 @@
  */
 import { buildEngine, StatsQuery } from '@cocos/ccbuild';
 import { dirname, join } from 'path';
-import { ensureDir, remove, writeFile, writeJSON } from 'fs-extra';
+import { ensureDir, remove, writeFile } from 'fs-extra';
+import { outputJSONAsync as outputJSON } from '../../../../../filesystem';
 import { realpathSync } from 'fs';
 
 const defaultOptions: buildEngineOptions = {
@@ -86,7 +87,7 @@ export async function buildEngineCommand(options: buildEngineOptions) {
     // 写入一些编译引擎的元信息
     await ensureDir(dirname(buildOptions.metaFile));
     // 缓存一下引擎提供的模块映射
-    await writeJSON(buildOptions.metaFile, metaContent, { spaces: 2 });
+    await outputJSON(buildOptions.metaFile, metaContent, { spaces: 2 });
 }
 
 export { buildSeparateEngine } from './separate-engine';

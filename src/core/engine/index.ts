@@ -1,4 +1,5 @@
 import fse from 'fs-extra';
+import { readJSONAsync } from '../filesystem';
 import { existsSync, readdirSync, statSync } from 'fs';
 import { EngineInfo } from './@types/public';
 import type { IEngineConfig, IEngineProjectConfig, IInitEngineInfo, IJointTextureLayoutPreviewResult } from './@types/config';
@@ -561,7 +562,7 @@ class EngineManager implements IEngine {
 
     async queryInternalAssetList(enginePath: string) {
         // 添加引擎依赖的预加载内置资源到主包内
-        const ccConfigJson = await fse.readJSON(join(enginePath, 'cc.config.json'));
+        const ccConfigJson = await readJSONAsync(join(enginePath, 'cc.config.json'));
         const internalAssets: string[] = [];
         for (const featureName in ccConfigJson.features) {
             if (ccConfigJson.features[featureName].dependentAssets) {

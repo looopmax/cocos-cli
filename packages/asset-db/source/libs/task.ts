@@ -2,7 +2,8 @@
 
 import type { AssetDB } from './asset-db';
 
-import { existsSync, readdirSync, removeSync } from 'fs-extra';
+import { readdirSync, removeSync } from 'fs-extra';
+import { pathExistsSync } from './filesystem';
 import { AssetActionEnum, Asset, VirtualAsset } from './asset';
 import { Importer } from './importer';
 import { compareVersion } from './utils';
@@ -489,7 +490,7 @@ export class DestroyTask extends Task {
         // 文件夹为空需要另同步检查
         // 异步接口会造成检查为空后中间又被插入新的文件
         const libraryDir = asset.library;
-        if (existsSync(libraryDir)) {
+        if (pathExistsSync(libraryDir)) {
             let files = readdirSync(libraryDir);
             if (files.length === 0) {
                 removeSync(libraryDir);

@@ -1,4 +1,4 @@
-import { readJSONSync } from 'fs-extra';
+import { readJSONSync } from '../filesystem';
 import i18n from '../base/i18n';
 import { BuildExitCode, BuildStageProgressCallback, IBuildCommandOption, IBuildResultData, IBuildStageOptions, IBuildTaskOption, IBundleBuildOptions, IPreviewSettingsResult, Platform } from './@types/private';
 import { pluginManager } from './manager/plugin';

@@ -1,6 +1,6 @@
 'use strict';
 
-import { outputJSON, readJSON } from 'fs-extra';
+import { outputJSONAsync as outputJSON, readJSONAsync as readJSON } from '../../../../filesystem';
 import { join } from 'path';
 import { recursively } from '../utils/index';
 import { buildAssetLibrary } from './asset-library';

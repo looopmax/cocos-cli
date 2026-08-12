@@ -3,7 +3,8 @@ import { GltfpackOptions, GlTFUserData, MeshOptimizerOption } from '../../../@ty
 import { i18nTranslate, linkToAssetTarget } from '../../utils';
 import { GltfConverter, readGltf } from '../utils/gltf-converter';
 import { validateGlTf } from './validation';
-import fs, { existsSync, readJSON, stat } from 'fs-extra';
+import fs, { stat } from 'fs-extra';
+import { pathExistsAsync, readJSONAsync as readJSON } from '../../../../filesystem';
 import { fork } from 'child_process';
 import path from 'path';
 import { GlobalPaths } from '../../../../../global';
@@ -109,7 +110,7 @@ async function _getOptimizerPath(asset: Asset, source: string, importerVersion: 
         options: JSON.stringify(options),
     };
 
-    if (existsSync(out) && existsSync(statusPath)) {
+    if (await pathExistsAsync(out) && await pathExistsAsync(statusPath)) {
         try {
             const json = await readJSON(statusPath);
             if (

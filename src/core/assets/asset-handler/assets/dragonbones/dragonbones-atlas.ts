@@ -1,7 +1,7 @@
+import { readFileUtf8Sync } from '../../../../filesystem';
 import { Asset, queryAsset, queryUUID } from '@cocos/asset-db';
 import * as path from 'path';
 import * as fs from 'fs';
-import * as fse from 'fs-extra';
 
 import { dragonBones, Texture2D } from 'cc';
 import { i18nTranslate, getDependUUIDList } from '../../utils';
@@ -20,7 +20,7 @@ export const DragonBonesAtlasHandler: AssetHandler = {
     async validate(asset: Asset) {
         const assetpath = asset.source;
         let json;
-        const text = fs.readFileSync(assetpath, 'utf8');
+        const text = readFileUtf8Sync(assetpath);
         try {
             json = JSON.parse(text);
         } catch (e) {
@@ -33,7 +33,7 @@ export const DragonBonesAtlasHandler: AssetHandler = {
         version: '1.0.2',
         async import(asset: Asset) {
             const fspath = asset.source;
-            const data = fse.readFileSync(fspath, { encoding: 'utf8' });
+            const data = readFileUtf8Sync(fspath);
 
             const json = JSON.parse(data);
 

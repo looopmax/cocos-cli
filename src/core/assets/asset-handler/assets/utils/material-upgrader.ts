@@ -1,6 +1,8 @@
+import { pathExistsSync } from '../../../../filesystem';
 import { queryAsset, Asset } from '@cocos/asset-db';
 import { EffectAsset } from 'cc';
-import { readJSONSync, existsSync } from 'fs-extra';
+
+import { readJSONSync } from '../../../../filesystem';
 
 const auxMap: Record<string, string> = { x: 'r', y: 'g', z: 'b', w: 'a', r: 'x', g: 'y', b: 'z', a: 'w' };
 function getVectorComponent(v: Record<string, number>, c: string) {
@@ -103,7 +105,7 @@ export async function upgradeProperties(material: any, asset: Asset) {
         return false;
     }
     const effectPath = effectInfo.library + '.json';
-    if (!existsSync(effectPath)) {
+    if (!pathExistsSync(effectPath)) {
         console.error(`upgradeProperties: the library json of effect(${effectInfo.source}) not found, upgrade skipped`);
         return false;
     }

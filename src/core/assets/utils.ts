@@ -2,7 +2,8 @@
 
 import { Asset, VirtualAsset, queryUUID, Utils as dbUtils, queryAsset as dbQueryAsset, queryPath } from '@cocos/asset-db';
 import { extname, isAbsolute, join, resolve } from 'path';
-import { readFile, readJSON } from 'fs-extra';
+import { readFile } from 'fs-extra';
+import { readJSONAsync as readJSON } from '../filesystem';
 import type { Asset as CCAsset, Details } from 'cc';
 import type { CCON } from 'cc/editor/serialization';
 import i18n from '../base/i18n';

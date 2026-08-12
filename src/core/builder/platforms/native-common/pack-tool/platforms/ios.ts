@@ -1,3 +1,4 @@
+import { readFileUtf8Sync } from '../../../../../filesystem';
 import { execSync, spawn } from 'child_process';
 import * as fs from 'fs-extra';
 import * as ps from 'path';
@@ -251,7 +252,7 @@ export default class IOSPackTool extends MacOSPackTool {
         const infoPlist = ps.join(
             this.paths.nativePrjDir, 'CMakeFiles', cmakeTmpDir, 'Info.plist');
         if (fs.existsSync(infoPlist)) {
-            const lines = fs.readFileSync(infoPlist).toString('utf-8').split('\n');
+            const lines = readFileUtf8Sync(infoPlist).split('\n');
             for (let i = 0; i < lines.length; i++) {
                 if (lines[i].match(/CFBundleIdentifier/)) {
                     i++;

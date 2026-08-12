@@ -1,4 +1,5 @@
-import { copy as fsCopy, ensureDir, existsSync, mkdtemp, outputFile, outputJson, readFile, readJson, remove } from 'fs-extra';
+import { pathExistsSync } from '../../filesystem';
+import { copy as fsCopy, ensureDir, mkdtemp, outputFile, outputJson, readFile, readJson, remove } from 'fs-extra';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import type { IAssetFileSystemProvider } from '../@types/public';
@@ -153,9 +154,9 @@ describe('copyAssetSource', () => {
         const transaction = await copyAssetSource(source, target, { overwrite: true });
         await transaction.finalize();
 
-        expect(existsSync(join(target, 'source-only.txt'))).toBe(true);
-        expect(existsSync(join(target, 'target-only.txt'))).toBe(false);
-        expect(existsSync(join(target, 'target-only.txt.meta'))).toBe(false);
+        expect(pathExistsSync(join(target, 'source-only.txt'))).toBe(true);
+        expect(pathExistsSync(join(target, 'target-only.txt'))).toBe(false);
+        expect(pathExistsSync(join(target, 'target-only.txt.meta'))).toBe(false);
     });
 
     it('restores the previous target when a completed copy is rolled back', async () => {

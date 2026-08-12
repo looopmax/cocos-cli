@@ -1,7 +1,7 @@
 
 'use strict';
 
-import { Stats, stat, statSync, existsSync, readdir, remove, writeJSON, readJSON } from 'fs-extra';
+import { Stats, stat, statSync, readdir, remove } from 'fs-extra';
 import { join, normalize, dirname, sep, basename, extname, relative } from 'path';
 import { EventEmitter } from 'events';
 import { v4 } from 'node-uuid';
@@ -20,6 +20,7 @@ import { ParallelQueue } from 'workflow-extra';
 import fg from 'fast-glob';
 import { CustomConsole, LogLevel } from './console';
 import { Migrate, Migrator } from './migrator';
+import { fsExists, outputJSONAsync as outputJSON, readJSONAsync as readJSON } from './filesystem';
 
 export { map } from './manager';
 
@@ -261,9 +262,7 @@ export class AssetDB extends EventEmitter {
             switch (asset.action) {
                 case AssetActionEnum.add: {
                     this.dataManager.empty(asset);
-                    const perfStart = Date.now();
                     const imported = await TASK_MAP.import.exec(this, asset, importer, true);
-                    console.log(`[asset-db:${this.options.name}] import done: ${asset.source} action=${asset.action} elapsed=${Date.now() - perfStart}ms imported=${imported}`);
                     if (imported) {
                         await asset.save();
                     }
@@ -279,9 +278,7 @@ export class AssetDB extends EventEmitter {
                 case AssetActionEnum.change: {
                     this.dataManager.empty(asset);
                     // await TASK_MAP.destroy.exec(this, asset);
-                    const perfStart = Date.now();
                     const imported = await TASK_MAP.import.exec(this, asset, importer, true);
-                    console.log(`[asset-db:${this.options.name}] import done: ${asset.source} action=${asset.action} elapsed=${Date.now() - perfStart}ms imported=${imported}`);
                     if (imported) {
                         await asset.save();
                     }
@@ -422,7 +419,7 @@ export class AssetDB extends EventEmitter {
                         return;
                     }
                     const dir = `${this.options.library}${sep}${uuid.substr(0, 2)}`;
-                    if (existsSync(dir)) {
+                    if (fsExists(dir)) {
                         const list = await readdir(dir);
                         for (let name of list) {
                             if (name.startsWith(uuid)) {
@@ -453,7 +450,7 @@ export class AssetDB extends EventEmitter {
     async save() {
         try {
             // 保存记录的缓存信息
-            await writeJSON(join(this.cachePath), this._generateRecordInfo(), { spaces: 4 })
+            await outputJSON(join(this.cachePath), this._generateRecordInfo(), { spaces: 4 })
         } catch (error) {
             this.console.error(error);
             this.console.error(`Save cache for asset db ${this.options.name} failed.`)
@@ -642,9 +639,9 @@ export class AssetDB extends EventEmitter {
         }
         let files: string[] = [];
         // 刷新路径不存在时可能是已被删除的资源需要更新数据库信息，不报错
-        if (existsSync(path)) {
+        if (fsExists(path)) {
             try {
-                const fileStat = statSync(path);
+                const fileStat = await stat(path);
                 if (fileStat.isFile()) {
                     files = [path];
                 } else {
@@ -700,18 +697,13 @@ export class AssetDB extends EventEmitter {
             const preAddFiles: string[] = [];
             const addFiles: string[] = [];
             const deleteFiles: string[] = [];
-            const logFile = (file: string, kind: string) => {
-                console.log(`[asset-db:${this.options.name}] scan ${kind}: ${file} ts=${Date.now()}`);
-            };
             if (this.preImporterHandler) {
                 for (let file of files) {
                     if (!this.path2asset.has(file)) {
                         if (this.preImporterHandler(file)) {
                             preAddFiles.push(file);
-                            logFile(file, 'pre-import');
                         } else {
                             addFiles.push(file);
-                            logFile(file, 'add');
                         }
                         addSet.add(file);
                     }
@@ -721,7 +713,6 @@ export class AssetDB extends EventEmitter {
                 for (let file of files) {
                     if (!this.path2asset.has(file)) {
                         addFiles.push(file);
-                        logFile(file, 'add');
                         addSet.add(file);
                     }
                     fileSet.add(file);
@@ -864,7 +855,7 @@ export class AssetDB extends EventEmitter {
                     deleteSet.has(uuidCacheAsset.source) ||
                     (
                         uuidCacheAsset.source !== file &&
-                        !existsSync(uuidCacheAsset.source)
+                            !fsExists(uuidCacheAsset.source)
                     )
                 ) {
                     const asset = uuidCacheAsset;
@@ -977,7 +968,7 @@ export class AssetDB extends EventEmitter {
 
         const file = asset.source;
         const metaFile = file + '.meta';
-        if (!existsSync(metaFile)) {
+        if (!fsExists(metaFile)) {
             console.error(`${metaFile} is not exist! will use cache meta.`);
             await asset.save();
         }

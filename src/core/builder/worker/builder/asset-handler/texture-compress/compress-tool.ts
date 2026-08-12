@@ -1,4 +1,5 @@
-import { existsSync, ensureDirSync } from 'fs-extra';
+import { pathExistsSync } from '../../../../../filesystem';
+import { ensureDirSync } from 'fs-extra';
 import { dirname } from 'path';
 import * as Path from 'path';
 import { roundToPowerOfTwo } from './utils';
@@ -136,7 +137,7 @@ export async function compressPVR(option: ICompressConfig) {
         downGradeError: true,
         prefix: '[compress pvrtc]',
     });
-    if (existsSync(dest)) {
+    if (pathExistsSync(dest)) {
         console.log('compress pvrtc success ' + `{link(${dest})}`);
     } else {
         console.error(i18n.t('builder.error.texture_compress_failed', {
@@ -220,7 +221,7 @@ export async function compressEtc(option: ICompressConfig) {
 
     console.debug(`etc compress command :  ${etcTool} ${args.join(' ')}`);
     await quickSpawn(etcTool, args, opts);
-    if (existsSync(dest)) {
+    if (pathExistsSync(dest)) {
         console.log('compress etc success ' + `{link(${dest})}`);
     } else {
         console.error(i18n.t('builder.error.texture_compress_failed', {
@@ -273,7 +274,7 @@ export async function compressAstc(option: ICompressConfig) {
         prefix: '[compress astc]',
     });
     // 目前有遇到偶现的在机子上生成 astc 失败，但是没有错误输出的情况，需要做一次检查错误提示
-    if (existsSync(dest)) {
+    if (pathExistsSync(dest)) {
         console.log('Compress astc success ' + `{link(${dest})}`);
     } else {
         console.error(i18n.t('builder.error.texture_compress_failed', {

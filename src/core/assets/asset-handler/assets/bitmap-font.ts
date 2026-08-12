@@ -1,8 +1,9 @@
+import { pathExistsSync } from '../../../filesystem';
 'use strict';
 
 import { Asset, queryAsset } from '@cocos/asset-db';
 import { SpriteFrame } from 'cc';
-import { existsSync, readFile } from 'fs-extra';
+import { readFile } from 'fs-extra';
 import { basename, dirname, join } from 'path';
 import { changeImageDefaultType } from './utils/image-utils';
 
@@ -25,7 +26,7 @@ function getRealFntTexturePath(name: string, asset: Asset) {
     // }
     const texturePath = join(dirname(asset.source), textureBaseName);
 
-    if (!existsSync(texturePath)) {
+    if (!pathExistsSync(texturePath)) {
         console.warn('Parse Error: Unable to find file Texture, the path: ' + texturePath);
     }
     return texturePath;

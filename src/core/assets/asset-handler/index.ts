@@ -2,9 +2,10 @@ export async function compileEffect(force?: boolean) {
     const { afterImport, autoGenEffectBinInfo } = await import('./assets/effect');
     try {
         await afterImport(force);
-        const { existsSync, statSync } = await import('fs-extra');
+        const { statSync } = await import('fs-extra');
+        const { pathExistsAsync } = await import('../../filesystem');
         const binPath = autoGenEffectBinInfo.effectBinPath;
-        if (existsSync(binPath)) {
+        if (await pathExistsAsync(binPath)) {
             const size = statSync(binPath).size;
             console.log(`[compileEffect] effect.bin generated: ${binPath} (${size} bytes)`);
         } else {

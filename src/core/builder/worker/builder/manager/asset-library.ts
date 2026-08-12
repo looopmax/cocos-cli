@@ -1,6 +1,8 @@
+import { pathExistsSync } from '../../../../filesystem';
 'use strict';
 
-import { readJSON, existsSync, outputJSON, removeSync, copy } from 'fs-extra';
+import { removeSync, copy } from 'fs-extra';
+import { outputJSONAsync as outputJSON, readJSONAsync as readJSON } from '../../../../filesystem';
 import { basename, dirname, extname, join } from 'path';
 import { CCON } from 'cc/editor/serialization';
 import { transformCCON } from './cconb-utils';
@@ -109,7 +111,7 @@ class BuildAssetLibrary {
     public clearAsset(uuid: string) {
         // 移除缓存的序列化信息
         const cacheFile = this.getAssetTempDirByUuid(uuid);
-        if (cacheFile && existsSync(cacheFile)) {
+        if (cacheFile && pathExistsSync(cacheFile)) {
             removeSync(cacheFile);
         }
         delete this.depend[uuid];
@@ -260,7 +262,7 @@ class BuildAssetLibrary {
         }
         // 构建缓存的文件夹
         const cacheFile = join(this.getAssetTempDirByUuid(uuid)!, `${options.debug ? 'debug' : 'release'}.json`);
-        if (this.checkUseCache(asset) && existsSync(cacheFile)) {
+        if (this.checkUseCache(asset) && pathExistsSync(cacheFile)) {
             try {
                 return await readJSON(cacheFile);
             } catch (error) {

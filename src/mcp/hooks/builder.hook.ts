@@ -1,6 +1,7 @@
+import { readFileUtf8Sync } from '../../core/filesystem';
 import { z } from 'zod';
 import { join, resolve } from 'path';
-import { existsSync, readdirSync, readFileSync } from 'fs';
+import { existsSync, readdirSync } from 'fs';
 import { SchemaBuildBaseOption, SchemaKnownBuildOptions, SchemaOtherPlatformBuildOption } from '../../api/builder/schema';
 
 export class BuilderHook {
@@ -28,7 +29,7 @@ export class BuilderHook {
                 const pkgJsonPath = join(platformsDir, dir, 'package.json');
                 if (existsSync(pkgJsonPath)) {
                     try {
-                        const pkgContent = JSON.parse(readFileSync(pkgJsonPath, 'utf-8'));
+                        const pkgContent = JSON.parse(readFileUtf8Sync(pkgJsonPath));
                         // 检查是否是平台插件 (contributes.builder.register === true)
                         if (pkgContent?.contributes?.builder?.register === true) {
                             // 优先使用 contributes.builder.platform，如果没有则使用 package.name
@@ -89,7 +90,7 @@ export class BuilderHook {
             const configPath = options.configPath;
             if (existsSync(configPath)) {
                 try {
-                    const fileContent = JSON.parse(readFileSync(configPath, 'utf-8'));
+                    const fileContent = JSON.parse(readFileUtf8Sync(configPath));
                     // 合并配置，args.options 优先级高于配置文件
                     options = args.options = {
                         ...fileContent,

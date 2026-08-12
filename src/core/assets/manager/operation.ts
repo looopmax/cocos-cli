@@ -1,9 +1,10 @@
+import { pathExistsSync } from '../../filesystem';
 /**
  * 资源操作类，会调用 assetManager/assetDB/assetHandler 等模块
  */
 
 import { refresh, reimport, queryUrl, Asset } from '@cocos/asset-db';
-import { copy as fsCopy, move, remove, existsSync } from 'fs-extra';
+import { copy as fsCopy, move, remove } from 'fs-extra';
 import { isAbsolute, dirname, join, relative, extname } from 'path';
 import { IMoveOptions } from '../@types/private';
 import { IAsset, CreateAssetOptions, IExportOptions, IExportData, CreateAssetByTypeOptions, ICreateMenuInfo } from '../@types/protected';
@@ -241,7 +242,7 @@ class AssetOperation extends EventEmitter {
     }
 
     _checkExists(path: string) {
-        if (!existsSync(path)) {
+        if (!pathExistsSync(path)) {
             throw new Error(`file ${path} not exists`);
         }
     }
@@ -252,7 +253,7 @@ class AssetOperation extends EventEmitter {
      * @returns 返回新的文件路径
      */
     _checkOverwrite(path: string, option?: AssetOperationOption) {
-        if (existsSync(path) && !option?.overwrite) {
+        if (pathExistsSync(path) && !option?.overwrite) {
             if (option?.rename) {
                 return utils.File.getName(path);
             }

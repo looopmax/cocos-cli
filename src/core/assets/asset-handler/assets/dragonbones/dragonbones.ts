@@ -1,3 +1,4 @@
+import { readFileUtf8Sync } from '../../../../filesystem';
 import { Asset } from '@cocos/asset-db';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -25,7 +26,7 @@ export const DragonBonesHandler: AssetHandler = {
         let json;
         const assetpath = asset.source;
         if (assetpath.endsWith('.json')) {
-            const text = fs.readFileSync(assetpath, 'utf8');
+            const text = readFileUtf8Sync(assetpath);
             try {
                 json = JSON.parse(text);
             } catch (e) {

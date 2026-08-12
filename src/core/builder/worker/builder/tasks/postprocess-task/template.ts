@@ -1,7 +1,8 @@
+import { pathExistsSync } from '../../../../../filesystem';
 'use strict';
 import template from 'ejs';
 
-import { copyFileSync, copySync, existsSync, outputFileSync, readFileSync, removeSync } from 'fs-extra';
+import { copyFileSync, copySync, outputFileSync, readFileSync, removeSync } from 'fs-extra';
 import { join, dirname, basename } from 'path';
 import * as babel from '@babel/core';
 // @ts-ignore

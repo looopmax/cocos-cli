@@ -1,5 +1,6 @@
+import { pathExistsSync } from '../../../../../filesystem';
 import { Asset, VirtualAsset } from '@cocos/asset-db';
-import { readFileSync, renameSync, outputFileSync, existsSync, emptyDir } from 'fs-extra';
+import { readFileSync, renameSync, outputFileSync, emptyDir } from 'fs-extra';
 import { basename, dirname, extname, join, parse } from 'path';
 import { BuiltinBundleName, BundleCompressionTypes } from '../../../../share/bundle-utils';
 import { buildAssetLibrary } from '../../manager/asset-library';
@@ -383,7 +384,7 @@ export class Bundle {
 
         if (this.isZip) {
             const zipPath = join(this.dest, BuildGlobalInfo.BUNDLE_ZIP_NAME);
-            if (existsSync(zipPath)) {
+            if (pathExistsSync(zipPath)) {
                 const res = await appendMd5ToPaths([zipPath]);
                 if (res) {
                     this.zipVer = res.hash!;
@@ -492,7 +493,7 @@ export class Bundle {
         const dest = this.dest;
         const nativeDir = join(dest, this.nativeBase);
         const importDir = join(dest, this.importBase);
-        const dirsToCompress = [nativeDir, importDir].filter(dir => existsSync(dir));
+        const dirsToCompress = [nativeDir, importDir].filter(dir => pathExistsSync(dir));
         if (dirsToCompress.length > 0) {
             this.isZip = true;
             await compressDirs(dirsToCompress, dest, join(dest, BuildGlobalInfo.BUNDLE_ZIP_NAME));

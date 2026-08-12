@@ -1,3 +1,4 @@
+import { pathExistsSync } from '../../../filesystem';
 'use strict';
 
 import { queryAsset, VirtualAsset } from '@cocos/asset-db';
@@ -7,7 +8,7 @@ import * as cc from 'cc';
 import { ISimpleLayout, matchSimpleLayout } from './utils/cube-map-simple-layout';
 
 import sharp from 'sharp';
-import { copyFileSync, existsSync, readFile } from 'fs-extra';
+import { copyFileSync, readFile } from 'fs-extra';
 import { basename, dirname, join } from 'path';
 import { ensureDirSync } from 'fs-extra';
 
@@ -143,9 +144,9 @@ export const ERPTextureCubeHandler: AssetHandler = {
                         console.log(`Start to bake asset {asset[${asset.uuid}](${asset.uuid})}`);
 
                         let cmdTool = join(GlobalPaths.staticDir, 'tools/cmft/cmftRelease64') + (process.platform === 'win32' ? '.exe' : '');
-                        if (process.platform !== 'win32' && !existsSync(cmdTool)) {
+                        if (process.platform !== 'win32' && !pathExistsSync(cmdTool)) {
                             const fallback = join(GlobalPaths.staticDir, 'tools/cmft/cmft');
-                            if (existsSync(fallback)) {
+                            if (pathExistsSync(fallback)) {
                                 cmdTool = fallback;
                             }
                         }
@@ -362,13 +363,13 @@ function getDirOfMipmaps(filePath: string, ext: string) {
  * 如果project目录存有上次卷积的结果，无需再次做卷积以节省导入时间
  */
 function isNeedConvolution(convolutionDir: string) {
-    if (!existsSync(convolutionDir)) {
+    if (!pathExistsSync(convolutionDir)) {
         return true;
     }
     const faceCount = 6;
     for (let i = 0; i < faceCount; i++) {
         const filePath = join(convolutionDir, 'mipmap_' + i.toString() + '.png');
-        if (!existsSync(filePath)) {
+        if (!pathExistsSync(filePath)) {
             return true;
         }
     }
@@ -379,7 +380,7 @@ function isNeedConvolution(convolutionDir: string) {
  * 保存卷积工具生成的mipmaps
  */
 function saveMipmaps(filePath: string, destPath: string) {
-    if (!existsSync(destPath)) {
+    if (!pathExistsSync(destPath)) {
         ensureDirSync(destPath);
     }
     copyFileSync(filePath, join(destPath, basename(filePath)));
