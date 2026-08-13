@@ -6,6 +6,8 @@ import { GlobalPaths } from '../../global';
  * Registers the scene middleware and initializes scene config.
  */
 export async function init(): Promise<void> {
+    const { sceneWorker } = await import('../../core/scene/main-process/scene-worker');
+    sceneWorker.prewarm(GlobalPaths.enginePath);
     await sceneInit();
 }
 
@@ -16,6 +18,5 @@ export async function init(): Promise<void> {
  */
 export async function startupWorker(projectPath: string): Promise<void> {
     const { sceneWorker } = await import('../../core/scene/main-process/scene-worker');
-    await sceneWorker.prewarm(GlobalPaths.enginePath);
     await sceneWorker.start(projectPath);
 }

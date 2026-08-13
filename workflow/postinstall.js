@@ -53,8 +53,6 @@ async function mockNpmModules() {
     await utils.runCommand('node', ['./workflow/generate-i18n-types.js', forceFlag].filter(Boolean));
     // tsc cli
     await utils.runCommand('node', ['./workflow/build-ts.js', forceFlag].filter(Boolean));
-    // 执行模块增强脚本：将 dist/api/index.js 打包为 dist/.dist-api-index.module.cache + .manifest（默认命名规范）
-    await utils.runCommand('node', ['./scripts/module-enhance.js', 'dump', './dist/api/index.js']);
     //download tools
     const minimalFlag = process.env.MINIMAL_DOWNLOAD_TOOLS ? '--minimal' : '';
     await utils.runCommand('node', ['./workflow/download-tools.js', forceFlag, minimalFlag].filter(Boolean));
