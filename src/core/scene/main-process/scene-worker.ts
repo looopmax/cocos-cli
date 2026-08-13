@@ -1,7 +1,7 @@
 import { fork, ChildProcess } from 'child_process';
 import path from 'path';
 import { EventEmitter } from 'events';
-import { SceneProcessEventTag, SceneReadyChannel } from '../common';
+import { SceneProcessEventTag, SceneReadyChannel, SceneStartChannel, SceneWarmupReadyChannel } from '../common';
 import { Rpc } from './rpc';
 import { getServerUrl } from '../../../server';
 import { disposeModuleMessages, listenModuleMessages } from './messages';
@@ -18,7 +18,7 @@ export class SceneWorker {
     private _process: ChildProcess | null = null;
     public get process(): ChildProcess {
         if (!this._process) {
-            throw new Error('Scene worker 未初始化, 请使用 sceneWorker.start');
+            throw new Error('Scene worker 未初始化，请先使用 sceneWorker.prewarm');
         }
         return this._process;
     }
@@ -32,18 +32,34 @@ export class SceneWorker {
     private projectPath: string = ''; // 项目路径
     private isRestarting = false; // 是否正在重启中
     private isManualStop = false; // 是否手动停止
+    private prewarmPromise: Promise<boolean> | null = null;
+    private prewarmReady = false;
+    private moduleListenerPromise: Promise<void> | null = null;
+    private startupPromise: Promise<boolean> | null = null;
 
-    async start(enginePath: string, projectPath: string): Promise<boolean> {
+    /**
+     * 预热 Scene 子进程。
+     *
+     * 这里只创建子进程并初始化与项目无关的 Engine 元数据，子进程会在
+     * `SceneWarmupReadyChannel` 后等待真正的项目启动消息。
+     */
+    async prewarm(enginePath: string): Promise<boolean> {
         if (this._process) {
-            console.warn('重复启动场景进程，请 stop 进程在 start');
+            if (this.prewarmPromise && this.enginePath === enginePath) {
+                return this.prewarmPromise;
+            }
+            console.warn('重复预热场景进程，请先 stop 进程');
             return false;
         }
+        if (this.prewarmPromise) {
+            return this.prewarmPromise;
+        }
 
-        // 保存启动参数以便重启时使用
+        // 保存引擎路径以便真正启动和崩溃重启时使用
         this.enginePath = enginePath;
-        this.projectPath = projectPath;
+        this.projectPath = '';
 
-        return new Promise(async (resolve) => {
+        const prewarmPromise = new Promise<boolean>(async (resolve) => {
             let isResolved = false;
             let startupTimer: NodeJS.Timeout | null = null;
 
@@ -65,8 +81,6 @@ export class SceneWorker {
             try {
                 const args = [
                     `--enginePath=${enginePath}`,
-                    `--projectPath=${projectPath}`,
-                    `--serverURL=${getServerUrl()}`,
                 ];
                 const precessPath = path.join(__dirname, '../../../../dist/core/scene/scene-process/main.js');
                 const inspectPort = await getAvailablePort(9230);
@@ -110,8 +124,9 @@ export class SceneWorker {
                 };
 
                 const onReady = (msg: any) => {
-                    if (msg === SceneReadyChannel) {
-                        console.log('Scene process start.');
+                    if (msg === SceneWarmupReadyChannel) {
+                        console.log('Scene process warmed up.');
+                        this.prewarmReady = true;
                         this._process?.off('message', onReady);
                         this._process?.off('error', onError);
                         this._process?.off('exit', onEarlyExit);
@@ -140,9 +155,8 @@ export class SceneWorker {
                 this._process.on('exit', onEarlyExit);
                 this._process.on('message', onReady);
 
-                // 启动RPC和注册监听器
-                Rpc.startup(this._process);
-                listenerPromise = this.registerListener();
+                // 预热阶段只建立进程级监听，不加载项目事件代理。
+                listenerPromise = this.registerListener(false);
                 listenerPromise.catch(failStartup);
 
             } catch (error) {
@@ -151,6 +165,86 @@ export class SceneWorker {
                 resolveOnce(false);
             }
         });
+        this.prewarmPromise = prewarmPromise;
+        return prewarmPromise;
+    }
+
+    /**
+     * 使用项目参数启动已经预热的 Scene 子进程。
+     */
+    async start(projectPath: string): Promise<boolean> {
+        if (this.startupPromise || this.projectPath) {
+            console.warn('重复启动场景进程，请先 stop 进程');
+            return false;
+        }
+
+        if (this.prewarmPromise && !this.prewarmReady) {
+            await this.prewarmPromise;
+        }
+        if (!this._process || !this.prewarmReady) {
+            console.warn('Scene worker 尚未预热，请先调用 prewarm');
+            return false;
+        }
+
+        this.projectPath = projectPath;
+        const startupPromise = new Promise<boolean>((resolve) => {
+            let settled = false;
+            let startupTimer: NodeJS.Timeout | null = null;
+            const cleanup = () => {
+                if (startupTimer) {
+                    clearTimeout(startupTimer);
+                    startupTimer = null;
+                }
+                this._process?.off('message', onReady);
+            };
+            const resolveOnce = (result: boolean) => {
+                if (settled) {
+                    return;
+                }
+                settled = true;
+                cleanup();
+                resolve(result);
+            };
+            const failStartup = (error: unknown) => {
+                console.error('注册场景进程监听器失败:', error);
+                try { this._process?.kill('SIGTERM'); } catch (_) { /* ignore */ }
+                this.clear();
+                resolveOnce(false);
+            };
+            const onReady = (msg: any) => {
+                if (msg === SceneReadyChannel) {
+                    console.log('Scene process start.');
+                    void (this.moduleListenerPromise ?? Promise.resolve()).then(
+                        () => resolveOnce(true),
+                        failStartup,
+                    );
+                }
+            };
+
+            startupTimer = setTimeout(() => {
+                console.error('场景进程启动超时');
+                try { this._process?.kill('SIGTERM'); } catch (_) { /* ignore */ }
+                this.clear();
+                resolveOnce(false);
+            }, 30000);
+
+            this._process?.on('message', onReady);
+            Rpc.startup(this._process ?? undefined);
+            this.moduleListenerPromise = listenModuleMessages();
+            this.moduleListenerPromise.catch(failStartup);
+
+            try {
+                this._process?.send({
+                    type: SceneStartChannel,
+                    projectPath,
+                    serverURL: getServerUrl(),
+                });
+            } catch (error) {
+                failStartup(error);
+            }
+        });
+        this.startupPromise = startupPromise;
+        return startupPromise;
     }
 
     async stop() {
@@ -241,16 +335,23 @@ export class SceneWorker {
         console.log(`开始重启场景进程 (第 ${this.currentRestartCount}/${this.maxRestartAttempts} 次)`);
 
         try {
+            const enginePath = this.enginePath;
+            const projectPath = this.projectPath;
             // 清理当前进程
             this._process = null;
+            this.prewarmPromise = null;
+            this.prewarmReady = false;
+            this.moduleListenerPromise = null;
+            this.startupPromise = null;
 
             // 固定重启间隔
             const delay = 2000; // 固定2秒间隔
             console.log(`等待 ${delay}ms 后重启...`);
             await new Promise(resolve => setTimeout(resolve, delay));
 
-            // 重新启动进程
-            const success = await this.start(this.enginePath, this.projectPath);
+            // 重新预热并启动进程
+            const warmed = await this.prewarm(enginePath);
+            const success = warmed && await this.start(projectPath);
 
             if (success) {
                 console.log('场景进程重启成功');
@@ -282,7 +383,7 @@ export class SceneWorker {
         }
     }
 
-    async registerListener() {
+    async registerListener(registerModuleMessages = true) {
 
         this.process.on('message', (msg: { type: string, event: string, args: any[] }) => {
             if (msg && msg.type === SceneProcessEventTag) {
@@ -313,6 +414,11 @@ export class SceneWorker {
 
         this.process.on('exit', (code: number, signal) => {
             disposeModuleMessages();
+            this._process = null;
+            this.prewarmReady = false;
+            this.prewarmPromise = null;
+            this.moduleListenerPromise = null;
+            this.startupPromise = null;
             if (code !== 0) {
                 console.error(`场景进程退出异常 code:${code}, signal:${signal}`);
                 
@@ -336,8 +442,10 @@ export class SceneWorker {
             // 重置手动停止标志
             this.isManualStop = false;
         });
-        // 监听主进程模块的事件
-        await listenModuleMessages();
+        // 项目启动后再加载模块事件代理，避免预热期间向尚未启动的 RPC 发送请求。
+        if (registerModuleMessages) {
+            await listenModuleMessages();
+        }
     }
 
     /**
@@ -434,6 +542,10 @@ export class SceneWorker {
             this.enginePath = '';
             this.projectPath = '';
             this._process = null;
+            this.prewarmPromise = null;
+            this.prewarmReady = false;
+            this.moduleListenerPromise = null;
+            this.startupPromise = null;
         }
     }
 }

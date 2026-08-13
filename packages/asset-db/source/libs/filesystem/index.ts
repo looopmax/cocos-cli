@@ -1,7 +1,7 @@
 'use strict';
 
 import { accessSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
-import { access, mkdir, readFile, writeFile } from 'fs/promises';
+import { promises as fsPromises } from 'fs';
 import { dirname, normalize, resolve } from 'path';
 import { LocalAssetFileSystemProvider } from './local-provider';
 import {
@@ -17,6 +17,8 @@ import {
 
 /** 仅缓存不超过 2 KB 的 UTF-8 文本，避免大文件长期占用内存。 */
 const MAX_FILE_UTF8_CACHE_BYTES = 2 * 1024;
+
+const { access, mkdir, readFile, writeFile } = fsPromises;
 
 interface FileUtf8CacheState {
     /** 同步和异步读取共享的文本缓存。 */

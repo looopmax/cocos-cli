@@ -5,7 +5,6 @@ import { newConsole } from './base/console';
 import { startServer, getServerUrl } from '../server';
 import { GlobalConfig, GlobalPaths } from '../global';
 import scripting from './scripting';
-import { startupScene } from './scene';
 
 interface IPreviewStartOptions {
     port?: number;
@@ -37,6 +36,9 @@ export default class Launcher {
             return;
         }
         this._init = true;
+        // 尽早创建 Scene Worker；预热过程由 SceneWorker 自身管理。
+        void import('./scene/main-process/scene-worker').then(({ sceneWorker }) =>
+            sceneWorker.prewarm(GlobalPaths.enginePath));
         /**
          * 初始化一些基础模块信息
          */
@@ -82,13 +84,14 @@ export default class Launcher {
      */
     async startup(port?: number) {
         await this.import();
-        await startServer(port);
-        // 初始化构建
-        const { init: initBuilder } = await import('./builder');
-        await initBuilder();
-
-        // 启动场景进程，需要在 Builder 之后，因为服务器路由场景还没有做前缀约束匹配范围比较广
-        await startupScene(GlobalPaths.enginePath, this.projectPath);
+        // Scene Worker 预热由 init 阶段触发，真正启动等场景路由和 Builder 初始化完成。
+        const { sceneWorker } = await import('./scene/main-process/scene-worker');
+        await Promise.all([
+            startServer(port),
+            import('./scene').then(({ init }) => init()),
+            import('./builder').then(({ init }) => init()),
+        ]);
+        await sceneWorker.start(this.projectPath);
     }
 
     async startPreview(options: number | IPreviewStartOptions = {}) {

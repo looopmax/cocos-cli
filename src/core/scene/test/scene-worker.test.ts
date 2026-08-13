@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import type { ChildProcess } from 'child_process';
 
-import { SceneReadyChannel } from '../common';
+import { SceneReadyChannel, SceneStartChannel, SceneWarmupReadyChannel } from '../common';
 import { SceneWorker } from '../main-process/scene-worker';
 
 const mockFork = jest.fn();
@@ -67,17 +67,23 @@ describe('SceneWorker', () => {
         expect(mockDisposeModuleMessages).toHaveBeenCalledTimes(2);
     });
 
-    it('waits for module message listeners before resolving startup', async () => {
+    it('prewarms the process before resolving startup', async () => {
         const worker = new SceneWorker();
         const process = new MockChildProcess();
         mockFork.mockReturnValue(process);
+
+        const prewarmPromise = worker.prewarm('/engine');
+        await Promise.resolve();
+        process.emit('message', SceneWarmupReadyChannel);
+        await expect(prewarmPromise).resolves.toBe(true);
+        expect(mockFork.mock.calls[0][1]).toEqual(['--enginePath=/engine']);
 
         let resolveListeners!: () => void;
         mockListenModuleMessages.mockReturnValue(new Promise<void>((resolve) => {
             resolveListeners = resolve;
         }));
 
-        const startPromise = worker.start('/engine', '/project');
+        const startPromise = worker.start('/project');
         await Promise.resolve();
 
         process.emit('message', SceneReadyChannel);
@@ -95,5 +101,9 @@ describe('SceneWorker', () => {
         await expect(startPromise).resolves.toBe(true);
         expect(mockRpcStartup).toHaveBeenCalledWith(process);
         expect(mockListenModuleMessages).toHaveBeenCalledTimes(1);
+        expect(process.send).toHaveBeenCalledWith(expect.objectContaining({
+            type: SceneStartChannel,
+            projectPath: '/project',
+        }));
     });
 });

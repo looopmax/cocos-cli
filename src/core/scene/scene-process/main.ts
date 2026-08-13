@@ -1,42 +1,47 @@
-import { SceneReadyChannel } from '../common';
+import { SceneReadyChannel, SceneStartChannel, SceneWarmupReadyChannel } from '../common';
 import { Rpc } from './rpc';
 import { parseCommandLineArgs, resolveSceneAssetBase } from './utils';
 import { Engine } from '../../engine';
 import { join } from 'path';
 import { serviceManager } from './service/service-manager';
 
-async function startup() {
-    // 监听进程退出事件
-    process.on('message', (msg) => {
-        if (msg === 'scene-process:exit') {
-            Rpc.dispose();
-            process.disconnect?.(); // 关闭 IPC
-            process.exit(0);// 退出进程
-        }
+interface ISceneStartMessage {
+    type: typeof SceneStartChannel;
+    projectPath: string;
+    serverURL?: string;
+}
+
+function isSceneStartMessage(message: unknown): message is ISceneStartMessage {
+    return !!message
+        && typeof message === 'object'
+        && (message as ISceneStartMessage).type === SceneStartChannel
+        && typeof (message as ISceneStartMessage).projectPath === 'string';
+}
+
+function waitForStartMessage(): Promise<ISceneStartMessage> {
+    return new Promise((resolve) => {
+        const onMessage = (message: unknown) => {
+            if (!isSceneStartMessage(message)) {
+                return;
+            }
+            process.off('message', onMessage);
+            resolve(message);
+        };
+        process.on('message', onMessage);
     });
+}
 
-    // 父进程死亡时 IPC 通道断开，立即退出避免被 launchd 收养成为孤儿进程
-    process.on('disconnect', () => {
-        console.log('[Scene] Parent disconnected, exiting');
-        process.exit(0);
-    });
+async function prewarm(enginePath: string): Promise<void> {
+    await Engine.init(enginePath);
+}
 
-    console.log(`[Scene] startup worker pid: ${process.pid}`);
-
-    console.log(`[Scene] parse args ${process.argv}`);
-    const { enginePath, projectPath, serverURL } = parseCommandLineArgs(process.argv);
-    if (!enginePath || !projectPath) {
-        throw new Error('enginePath or projectPath is not set');
-    }
-
-    // 初始化 service-manager
+async function start(enginePath: string, projectPath: string, serverURL?: string): Promise<void> {
     serviceManager.initialize(serverURL ?? '');
 
-    await Engine.init(enginePath);
     const libraryPath = join(projectPath, 'library');
     const assetBase = resolveSceneAssetBase(serverURL, libraryPath);
     await Engine.initEngine({
-        serverURL: serverURL,
+        serverURL,
         importBase: assetBase,
         nativeBase: assetBase,
         writablePath: join(projectPath, 'temp'),
@@ -61,8 +66,42 @@ async function startup() {
     });
 
     console.log('[Scene] initEngine success');
+}
 
-    // 发送消息给父进程
+async function startup() {
+    // 监听进程退出事件
+    process.on('message', (msg) => {
+        if (msg === 'scene-process:exit') {
+            Rpc.dispose();
+            process.disconnect?.(); // 关闭 IPC
+            process.exit(0);// 退出进程
+        }
+    });
+
+    // 父进程死亡时 IPC 通道断开，立即退出避免被 launchd 收养成为孤儿进程
+    process.on('disconnect', () => {
+        console.log('[Scene] Parent disconnected, exiting');
+        process.exit(0);
+    });
+
+    console.log(`[Scene] startup worker pid: ${process.pid}`);
+
+    console.log(`[Scene] parse args ${process.argv}`);
+    const { enginePath } = parseCommandLineArgs(process.argv);
+    if (!enginePath) {
+        throw new Error('enginePath is not set');
+    }
+
+    // 预热阶段只初始化与项目无关的 Engine 元数据，避免提前读取 project。
+    await prewarm(enginePath);
+    process.send?.(SceneWarmupReadyChannel);
+    console.log('[Scene] worker warmed up, waiting for project');
+
+    // 真正启动阶段由父进程通过 IPC 传入 project 和 server URL。
+    const { projectPath, serverURL } = await waitForStartMessage();
+    await start(enginePath, projectPath, serverURL);
+
+    // 发送消息给父进程，表示项目场景服务已经完成初始化。
     process.send?.(SceneReadyChannel);
     console.log(`[Scene] startup worker success, cocos version: ${cc.ENGINE_VERSION}`);
 }

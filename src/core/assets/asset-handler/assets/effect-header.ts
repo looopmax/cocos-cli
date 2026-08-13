@@ -3,7 +3,7 @@ import { Asset } from '@cocos/asset-db';
 import { AssetHandler } from '../../@types/protected';
 import { readdirSync, statSync } from 'fs-extra';
 import { basename, dirname, extname, join, relative } from 'path';
-import { addChunk } from '../../effect-compiler';
+import { effectCompileProcess } from './effect-compile-client';
 import { Engine } from '../../../engine';
 
 // 添加所有 builtin 头文件
@@ -28,7 +28,11 @@ const builtinChunks = (() => {
 for (let i = 0; i < builtinChunks.length; ++i) {
     const name = basename(builtinChunks[i], '.chunk');
     const content = readFileUtf8Sync(builtinChunks[i]);
-    addChunk(name, content);
+    // IPC preserves registration order, so these chunks are available before
+    // the next build-effect request reaches the compiler process.
+    void effectCompileProcess.request<void>({ type: 'add-chunk', name, content }).catch((error) => {
+        console.error(`Failed to register builtin effect chunk "${name}"`, error);
+    });
 }
 
 export const EffectHeaderHandler: AssetHandler = {
@@ -69,7 +73,7 @@ export const EffectHeaderHandler: AssetHandler = {
                 const name = path + (path.length ? '/' : '') + basename(asset.source, extname(asset.source));
 
                 const content = readFileUtf8Sync(asset.source);
-                addChunk(name, content);
+                await effectCompileProcess.request<void>({ type: 'add-chunk', name, content });
 
                 return true;
             } catch (err) {

@@ -1,3 +1,4 @@
+import '../module-enhance-inject';
 import type { EngineApi } from '../api/engine/engine';
 import type { ProjectApi } from '../api/project/project';
 import type { AssetsApi } from '../api/assets/assets';

@@ -16,5 +16,6 @@ export async function init(): Promise<void> {
  */
 export async function startupWorker(projectPath: string): Promise<void> {
     const { sceneWorker } = await import('../../core/scene/main-process/scene-worker');
-    await sceneWorker.start(GlobalPaths.enginePath, projectPath);
+    await sceneWorker.prewarm(GlobalPaths.enginePath);
+    await sceneWorker.start(projectPath);
 }

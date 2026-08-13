@@ -1,7 +1,7 @@
 
 'use strict';
 
-import { Stats, stat, statSync, readdir, remove } from 'fs-extra';
+import { Stats, statSync, readdir, remove } from 'fs-extra';
 import { join, normalize, dirname, sep, basename, extname, relative } from 'path';
 import { EventEmitter } from 'events';
 import { v4 } from 'node-uuid';
@@ -33,6 +33,18 @@ function getAsset(uuid) {
         }
     }
     return undefined;
+}
+
+/** Read file metadata without a separate existence check. */
+function tryStatSync(path: string): Stats | undefined {
+    try {
+        return statSync(path);
+    } catch (error: any) {
+        if (error?.code === 'ENOENT') {
+            return undefined;
+        }
+        throw error;
+    }
 }
 
 export interface AssetDBStartOptions {
@@ -641,7 +653,7 @@ export class AssetDB extends EventEmitter {
         // 刷新路径不存在时可能是已被删除的资源需要更新数据库信息，不报错
         if (fsExists(path)) {
             try {
-                const fileStat = await stat(path);
+                const fileStat = statSync(path);
                 if (fileStat.isFile()) {
                     files = [path];
                 } else {
@@ -829,7 +841,13 @@ export class AssetDB extends EventEmitter {
      * @param deleteFiles
      */
     private async _checkAssetsStatSync(addFiles: string[], deleteFiles: string[], deleteSet: Set<string>) {
-        for (let file of deleteFiles) {
+        // refresh 扫描结果可能包含重复路径；去重可避免重复创建 task、读取 meta 和修改索引。
+        const uniqueDeleteFiles = [...new Set(deleteFiles)];
+        const uniqueAddFiles = [...new Set(addFiles)];
+
+        // 删除阶段先同步更新内存索引，再批量等待 meta 文件删除，避免逐个串行等待 I/O。
+        const deleteMetaTasks: Promise<unknown>[] = [];
+        for (const file of uniqueDeleteFiles) {
             // 毋庸置疑的删除文件
             const asset = this.path2asset.get(file);
             if (asset) {
@@ -839,15 +857,23 @@ export class AssetDB extends EventEmitter {
                 this.path2asset.delete(asset.source);
 
                 const metaFile = asset.source + '.meta';
-                await this.metaManager.remove(metaFile);
+                deleteMetaTasks.push(this.metaManager.remove(metaFile));
                 this.infoManager.remove(asset.source);
                 this.infoManager.remove(metaFile);
             }
         }
-        for (let file of addFiles) {
+        await Promise.all(deleteMetaTasks);
+
+        // meta 读取彼此独立，先批量准备结果；后续 AssetDB 状态提交仍按原顺序串行执行，
+        // 保证 UUID 冲突处理、事件触发和 task 顺序与原逻辑一致。
+        const addMetaInfos = await Promise.all(
+            uniqueAddFiles.map((file) => this.metaManager.get(file + '.meta')),
+        );
+        for (let index = 0; index < uniqueAddFiles.length; index++) {
+            const file = uniqueAddFiles[index];
             // 获取 meta，没有的话直接生成
             const metaFile = file + '.meta';
-            const metaInfo = await this.metaManager.get(metaFile);
+            const metaInfo = addMetaInfos[index];
             const uuidCacheAsset = getAsset(metaInfo.json.uuid);
             // uuid 指向的文件被删除了，就是移动文件
             if (uuidCacheAsset) {
@@ -968,13 +994,21 @@ export class AssetDB extends EventEmitter {
 
         const file = asset.source;
         const metaFile = file + '.meta';
-        if (!fsExists(metaFile)) {
+        // tryStatSync combines the existence check and metadata read into one
+        // syscall. This path is already running inside the refresh task and
+        // does not need async stat scheduling; the method remains async only
+        // because `asset.save()` may need to recreate a missing meta file.
+        let metaStat = tryStatSync(metaFile);
+        if (!metaStat) {
             console.error(`${metaFile} is not exist! will use cache meta.`);
             await asset.save();
+            metaStat = tryStatSync(metaFile);
         }
-        const metaStat = await stat(metaFile);
+        if (!metaStat) {
+            throw new Error(`Failed to create meta file: ${metaFile}`);
+        }
 
-        if (!await this.infoManager.compare(metaFile, metaStat.mtimeMs)) {
+        if (!this.infoManager.compare(metaFile, metaStat.mtimeMs)) {
             this.emit('delete', asset);
             this.emit('deleted', asset);
             asset.action = AssetActionEnum.add;
@@ -990,7 +1024,7 @@ export class AssetDB extends EventEmitter {
             this.infoManager.add(metaFile, metaStat.mtimeMs);
             asset.task = this.taskManager.addTask(asset);
         } else {
-            const fileStat = await stat(file);
+            const fileStat = statSync(file);
             if (this.infoManager.compare(file, fileStat.mtimeMs)) {
                 if (this.dataManager.has(asset)) {
                     asset.action = AssetActionEnum.none;

@@ -180,5 +180,6 @@ export async function startupScene(enginePath: string, projectPath: string) {
     await init();
     // 启动场景进程
     const { sceneWorker } = await import('./main-process/scene-worker');
-    await sceneWorker.start(enginePath, projectPath);
+    await sceneWorker.prewarm(enginePath);
+    await sceneWorker.start(projectPath);
 }

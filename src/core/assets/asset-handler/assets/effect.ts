@@ -17,45 +17,29 @@ import {
 import { readFileSync, readdirSync, ensureDir, writeFile } from 'fs-extra';
 import { readJSONAsync as readJSON } from '../../../filesystem';
 import { basename, dirname, extname, join, relative, resolve } from 'path';
-import { buildEffect, options, addChunk } from '../../effect-compiler';
+import { effectCompileProcess } from './effect-compile-client';
+import type { IEffectInfo } from '../../effect-compiler';
 
 import { getDependUUIDList, openCode } from '../utils';
 import zlib from 'zlib';
 import assetConfig from '../../asset-config';
 
-export interface IChunkInfo {
-    name: string | undefined;
-    content: string | undefined;
+function getChunkTargets(): string[] {
+    const targets = new Set<string>();
+    forEach((db: AssetDB) => targets.add(db.options.target));
+    return [...targets];
 }
-// 当某个头文件请求没找到，尝试把这个请求看成相对当前 effect 的路径，返回实际头文件路径再尝试找一下
-const closure = { root: '', dir: '' };
-options.throwOnWarning = true; // be more strict on the user input for now
-options.skipParserTest = true; // we are guaranteed to have GL backend test here, so parser tests are not really that helpful anyways
-options.getAlternativeChunkPaths = (path: string) => {
-    return [relative(closure.root, resolve(closure.dir, path)).replace(/\\/g, '/')];
-};
-// 依然没有找到时，可能是依赖头文件还没有注册，尝试去每个 DB 搜一遍
-options.chunkSearchFn = (names: string[]) => {
-    const res: IChunkInfo = { name: undefined, content: undefined };
-    forEach((db: AssetDB) => {
-        if (res.content !== undefined) {
-            return;
-        }
-        for (let i = 0; i < names.length; i++) {
-            // user input path first
-            const name = names[i];
-            const file = resolve(db.options.target, 'chunks', name + '.chunk');
-            if (!pathExistsSync(file)) {
-                continue;
-            }
-            res.name = name;
-            res.content = readFileUtf8Sync(file);
-            break;
-        }
-    });
-    return res;
-};
 
+async function buildEffectInChildProcess(name: string, content: string, sourceFile?: string, chunkRoot?: string): Promise<IEffectInfo> {
+    return effectCompileProcess.request<IEffectInfo>({
+        type: 'build-effect',
+        name,
+        content,
+        chunkTargets: getChunkTargets(),
+        chunkRoot: chunkRoot ?? '',
+        sourceDirectory: sourceFile ? dirname(sourceFile) : '',
+    });
+}
 export const autoGenEffectBinInfo: {
     autoGenEffectBin: boolean;
     waitingGenEffectBin: boolean;
@@ -109,7 +93,7 @@ export const EffectHandler: AssetHandler = {
         'build-effect': {
             async operator(name: string, effectContent: string) {
                 try {
-                    return buildEffect(name, effectContent);
+                    return await buildEffectInChildProcess(name, effectContent);
                 } catch (e) {
                     console.error(e);
                     return null;
@@ -124,7 +108,7 @@ export const EffectHandler: AssetHandler = {
          */
         'add-chunk': {
             async operator(name: string, content: string) {
-                addChunk(name, content);
+                await effectCompileProcess.request<void>({ type: 'add-chunk', name, content });
             },
         },
     },
@@ -163,13 +147,12 @@ export default EffectHandler;
  */
 async function generateEffectAsset(asset: IAsset, assetSourceFile: string, effectSourceFile: string) {
     const target = asset._assetDB.options.target;
-    closure.root = join(target, 'chunks');
-    closure.dir = dirname(assetSourceFile);
-    const path = relative(join(target, 'effects'), closure.dir).replace(/\\/g, '/');
+    const sourceDirectory = dirname(assetSourceFile);
+    const path = relative(join(target, 'effects'), sourceDirectory).replace(/\\/g, '/');
     const name = path + (path.length ? '/' : '') + basename(effectSourceFile, extname(effectSourceFile));
 
     const content = readFileUtf8Sync(effectSourceFile);
-    const effect = buildEffect(name, content);
+    const effect = await buildEffectInChildProcess(name, content, assetSourceFile, join(target, 'chunks'));
 
     // 记录 effect 的头文件依赖
     forEach((db: AssetDB) => {
