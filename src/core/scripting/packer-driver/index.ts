@@ -28,6 +28,7 @@ import JSON5 from 'json5';
 import { existsSync } from 'fs';
 import { url2path } from '../../assets/utils';
 import { compressUuid } from '../../builder/worker/builder/utils';
+import { GlobalPaths } from '../../../global';
 import { TypeScriptConfigBuilder } from '../intelligence';
 import { eventEmitter } from '../event-emitter';
 import { DBInfo } from '../@types/config-export';
@@ -136,7 +137,7 @@ export class PackerDriver {
 
         const loadMappings: Record<string, string> = {
             'cce:/internal/code-quality/': pathToFileURL(
-                ps.join(__dirname, '../..', '..', '..', 'static', 'scripting', 'builtin-mods', 'code-quality', '/')).href,
+                ps.join(GlobalPaths.staticDir, 'scripting', 'builtin-mods', 'code-quality', '/')).href,
         };
 
         const statsQuery = await StatsQuery.create(engineTsPath);
@@ -247,7 +248,7 @@ export class PackerDriver {
     }
 
     public static queryCCEModuleMap(): CCEModuleMap {
-        const cceModuleMapLocation = ps.join(__dirname, '../../../../static/scripting/cce-module.jsonc');
+        const cceModuleMapLocation = ps.join(GlobalPaths.staticDir, 'scripting', 'cce-module.jsonc');
         const cceModuleMap = JSON5.parse(readFileUtf8Sync(cceModuleMapLocation)) as CCEModuleMap;
         cceModuleMap.mapLocation = cceModuleMapLocation;
         return cceModuleMap;

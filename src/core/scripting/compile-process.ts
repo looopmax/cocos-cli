@@ -1,5 +1,7 @@
 import { join } from 'path';
 import { fork } from 'child_process';
+import { existsSync } from 'fs';
+import { distRoot } from '../../global';
 import { AssetChangeInfo } from './packer-driver/asset-db-interop';
 
 export interface ICompileWorkerData {
@@ -7,6 +9,17 @@ export interface ICompileWorkerData {
     enginePath: string;
     features: string[];
     assetChanges?: AssetChangeInfo[];
+}
+
+/**
+ * 解析脚本编译 worker 入口。优先使用 esbuild bundle，回退到 tsc 散文件。
+ */
+function resolveCompileWorkerPath(): string {
+    const bundlePath = join(distRoot, 'bundle', 'scripting-compile-worker.js');
+    if (existsSync(bundlePath)) {
+        return bundlePath;
+    }
+    return join(__dirname, 'compile-worker.js');
 }
 
 /**
@@ -21,9 +34,9 @@ export function startCompileScriptProcess(data: ICompileWorkerData, completeCall
         let workerPath = join(__dirname, 'compile-worker.ts');
         const execArgv = [...process.execArgv];
         
-        // 如果是编译后的环境
+        // 如果是编译后的环境（tsc 散文件 或 esbuild bundle）
         if (!__filename.endsWith('.ts')) {
-            workerPath = join(__dirname, 'compile-worker.js');
+            workerPath = resolveCompileWorkerPath();
         } else if (!isTsNode && __filename.endsWith('.ts')) {
             // ts 环境但没有直接注册 ts-node（比如 CLI 调用）
             execArgv.push('-r', 'ts-node/register');

@@ -4,6 +4,7 @@ import { pathExistsSync } from '../../../../filesystem';
 import { removeSync, copy } from 'fs-extra';
 import { outputJSONAsync as outputJSON, readJSONAsync as readJSON } from '../../../../filesystem';
 import { basename, dirname, extname, join } from 'path';
+import { distRoot } from '../../../../../global';
 import { CCON } from 'cc/editor/serialization';
 import { transformCCON } from './cconb-utils';
 import { deserialize, EffectAsset, Asset as CCAsset, SceneAsset, LightComponent, Node } from 'cc';
@@ -369,7 +370,7 @@ class BuildAssetLibrary {
 
         // 调用 effect 编译器来做 effect 多余数据剔除，不走数据缓存，每次重新剔除生成
         if (instance instanceof EffectAsset) {
-            const { stripEditorSupport } = require(join(__dirname, '../../../../assets/effect-compiler/utils.js'));
+            const { stripEditorSupport } = require(join(distRoot, 'core', 'assets', 'effect-compiler', 'utils.js'));
             instance = stripEditorSupport(instance, options['cc.EffectAsset']);
         }
 

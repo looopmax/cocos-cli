@@ -62,7 +62,7 @@ function materializeDisplayI18nKey(target: I18nDisplayRecord | undefined, key: D
 }
 
 const pluginRoots = [
-    join(__dirname, '../platforms'),
+    join(GlobalPaths.workspace, 'dist/core/builder/platforms'),
     join(GlobalPaths.workspace, 'packages/platforms'),
 ];
 

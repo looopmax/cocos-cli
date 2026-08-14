@@ -9,6 +9,7 @@ import { configurationRegistry } from './registry';
 import { IBaseConfiguration } from './config';
 import EventEmitter from 'events';
 import { outputJSONAsync, pathExistsAsync, readJSONAsync } from '../../filesystem';
+import { distRoot } from '../../../global';
 
 export interface IConfigurationManager {
     /**
@@ -69,7 +70,7 @@ export class ConfigurationManager extends EventEmitter implements IConfiguration
 
     static VERSION: string = '1.0.0';
     static name = 'cocos.config.json';
-    static SchemaPathSource = join(__dirname, '../../../../dist/cocos.config.schema.json');
+    static SchemaPathSource = join(distRoot, 'cocos.config.schema.json');
     static relativeSchemaPath = `./temp/${path.basename(ConfigurationManager.SchemaPathSource)}`;
     // 配置文件已移到 settings/ 目录，$schema 相对引用需回退一级
     static schemaRef = `../temp/${path.basename(ConfigurationManager.SchemaPathSource)}`;

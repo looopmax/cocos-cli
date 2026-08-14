@@ -1,5 +1,18 @@
 import { join } from 'path';
 import { fork } from 'child_process';
+import { existsSync } from 'fs';
+import { distRoot } from '../../global';
+
+/**
+ * 解析引擎编译 worker 入口。优先使用 esbuild bundle，回退到 tsc 散文件。
+ */
+function resolveCompileWorkerPath(): string {
+    const bundlePath = join(distRoot, 'bundle', 'engine-compile-worker.js');
+    if (existsSync(bundlePath)) {
+        return bundlePath;
+    }
+    return join(__dirname, 'compile-worker.js');
+}
 
 /**
  * 在独立的子进程中运行引擎编译
@@ -13,9 +26,9 @@ export function startCompileEngineProcess(force: boolean = false): Promise<void>
         let workerPath = join(__dirname, 'compile-worker.ts');
         const execArgv = [...process.execArgv];
         
-        // 如果是编译后的环境
+        // 如果是编译后的环境（tsc 散文件 或 esbuild bundle）
         if (!__filename.endsWith('.ts')) {
-            workerPath = join(__dirname, 'compile-worker.js');
+            workerPath = resolveCompileWorkerPath();
         } else if (!isTsNode && __filename.endsWith('.ts')) {
             // ts 环境但没有直接注册 ts-node（比如被某些 runner 调用）
             execArgv.push('-r', 'ts-node/register');

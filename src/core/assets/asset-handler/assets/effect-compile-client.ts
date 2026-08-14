@@ -1,5 +1,7 @@
 import { ChildProcess, fork } from 'child_process';
 import { join } from 'path';
+import { existsSync } from 'fs';
+import { distRoot } from '../../../../global';
 import { Engine } from '../../../engine';
 import type {
     IEffectAddChunkRequest,
@@ -31,10 +33,13 @@ class EffectCompileProcessClient {
 
         const isTsNode = !!(process as any)[Symbol.for('ts-node.register.instance')]
             || !!process.env.TS_NODE_DEV;
-        const workerExtension = __filename.endsWith('.ts') ? 'ts' : 'js';
-        const workerPath = join(__dirname, `effect-compile-process.${workerExtension}`);
+        // bundle 形态优先使用 esbuild 产物，回退到 tsc 散文件
+        const bundlePath = join(distRoot, 'bundle', 'effect-compile-process.js');
+        const workerPath = existsSync(bundlePath)
+            ? bundlePath
+            : join(__dirname, `effect-compile-process.${__filename.endsWith('.ts') ? 'ts' : 'js'}`);
         const execArgv = process.execArgv.filter((arg) => !arg.startsWith('--inspect'));
-        if (workerExtension === 'ts' && !isTsNode) {
+        if (__filename.endsWith('.ts') && !isTsNode) {
             execArgv.push('-r', 'ts-node/register');
         }
 

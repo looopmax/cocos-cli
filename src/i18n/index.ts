@@ -2,10 +2,11 @@ import { readFileUtf8Sync } from '../core/filesystem';
 import i18n from 'i18next';
 import fs from 'fs';
 import path from 'path';
+import { GlobalPaths } from '../global';
 
 // 加载指定语言下的所有 JSON 文件并合并为扁平结构
 function loadLanguageResources(language: string): Record<string, any> {
-    const localesDir = path.join(__dirname, '../../static/i18n', language);
+    const localesDir = path.join(GlobalPaths.staticDir, 'i18n', language);
     const resources: Record<string, any> = {};
 
     try {

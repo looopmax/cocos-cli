@@ -2,6 +2,8 @@
 
 import { createHash } from 'crypto';
 import { basename, dirname, join } from 'path';
+import { existsSync } from 'fs';
+import { distRoot } from '../../../../../../global';
 import {
     outputJSON,
     pathExists,
@@ -24,6 +26,19 @@ import utils from '../../../../../base/utils';
 import { relativeUrl } from '../../utils';
 import builderConfig from '../../../../share/builder-config';
 import { buildEngineOptions } from './build-engine';
+
+/**
+ * 解析 worker 池动态加载的脚本路径。
+ * bundle 形态优先指向 dist/bundle 下的独立 bundle，回退到 tsc 散文件。
+ */
+function resolveBuilderTaskPath(bundleName: string): string {
+    const bundlePath = join(distRoot, 'bundle', bundleName);
+    if (existsSync(bundlePath)) {
+        return bundlePath;
+    }
+    const taskName = bundleName === 'builder-script-task.js' ? 'build-script' : 'build-engine';
+    return join(__dirname, `./${taskName}`);
+}
 
 // 存储引擎复用参数的文件
 const EngineCacheName = 'engine-cache';
@@ -199,7 +214,7 @@ async function buildEngine(options: IBuildEngineParam, ccEnvConstants: StatsQuer
     // 引擎编译目前编译内存占用较大，需要独立进程管理
     await workerManager.registerTask({
         name: 'build-engine',
-        path: join(__dirname, './build-engine'),
+        path: resolveBuilderTaskPath('builder-engine-task.js'),
         options: {
             cwd: options.entry,
         },
@@ -224,7 +239,7 @@ export async function buildSplitEngine(options: IBuildSeparateEngineOptions, log
     // 引擎编译目前编译内存占用较大，需要独立进程管理
     await workerManager.registerTask({
         name: 'build-engine',
-        path: join(__dirname, './build-engine'),
+        path: resolveBuilderTaskPath('builder-engine-task.js'),
     });
     return await workerManager.runTask('build-engine', 'buildSeparateEngine', [options], logDest);
     // return await buildSeparateEngine(options);

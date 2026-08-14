@@ -6,6 +6,7 @@ import { toolRegistry } from '../api/decorator/decorator';
 import { z } from 'zod';
 import * as pkgJson from '../../package.json';
 import { join } from 'path';
+import { GlobalPaths } from '../global';
 import { ResourceManager } from './resources';
 import { HTTP_STATUS } from '../api/base/schema-base';
 import { BuilderHook } from './hooks/builder.hook';
@@ -44,7 +45,7 @@ export class McpMiddleware {
         });
 
         // 初始化资源管理器
-        const docsPath = join(__dirname, '../../docs');
+        const docsPath = join(GlobalPaths.workspace, 'docs');
         this.resourceManager = new ResourceManager(docsPath);
 
         // 注册资源和工具

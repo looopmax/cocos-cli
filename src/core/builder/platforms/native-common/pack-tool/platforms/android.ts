@@ -3,6 +3,7 @@ import * as fs from 'fs-extra';
 import * as ps from 'path';
 import { cchelper } from '../utils';
 import NativePackTool, { CocosParams } from '../base/default';
+import { GlobalPaths } from '../../../../../../global';
 
 export interface IOrientation {
     landscapeLeft: boolean;
@@ -147,7 +148,7 @@ export default class AndroidPackTool extends NativePackTool {
                     console.log(`[Android] Inferred nativeEnginePath: ${nativeEnginePath}`);
                 }
             } else if (!nativeEnginePath && !enginePath) {
-                 const cliEnginePath = ps.resolve(__dirname, '../../../../../../../../packages/engine');
+                 const cliEnginePath = ps.join(GlobalPaths.workspace, 'packages/engine');
                  if (fs.existsSync(cliEnginePath)) {
                      // fallback logic placeholder
                  }

@@ -1,6 +1,8 @@
 'use strict';
 
 import { dirname, join } from 'path';
+import { existsSync } from 'fs';
+import { distRoot } from '../../../../../../global';
 import { CCEnvConstants, getCCEnvConstants } from './build-time-constants';
 import { buildScriptCommand, buildSystemJsCommand, IBuildScriptFunctionOption, TransformOptions } from './build-script';
 import { ensureDir, pathExists, writeFile } from 'fs-extra';
@@ -21,6 +23,19 @@ import project from '../../../../../project';
 import { runStaticCompileCheck } from './static-compile-check';
 import { BuildExitCode } from '../../../../@types/protected';
 type PlatformType = StatsQuery.ConstantManager.PlatformType;
+
+/**
+ * 解析 worker 池动态加载的脚本路径。
+ * bundle 形态优先指向 dist/bundle 下的独立 bundle，回退到 tsc 散文件。
+ */
+function resolveBuilderTaskPath(bundleName: string): string {
+    const bundlePath = join(distRoot, 'bundle', bundleName);
+    if (existsSync(bundlePath)) {
+        return bundlePath;
+    }
+    const taskName = bundleName === 'builder-script-task.js' ? 'build-script' : 'build-engine';
+    return join(__dirname, `./${taskName}`);
+}
 
 interface IScriptProjectOption extends SharedSettings {
     ccEnvConstants: CCEnvConstants;
@@ -170,7 +185,7 @@ export class ScriptBuilder {
         // 项目脚本编译目前编译内存占用较大，需要独立进程管理
         await workerManager.registerTask({
             name: 'build-script',
-            path: join(__dirname, './build-script'),
+            path: resolveBuilderTaskPath('builder-script-task.js'),
             options: {
                 cwd: project.path,
             }
@@ -195,7 +210,7 @@ export class ScriptBuilder {
     static async buildPolyfills(options: IPolyFills = {}, dest: string) {
         await workerManager.registerTask({
             name: 'build-script',
-            path: join(__dirname, './build-script'),
+            path: resolveBuilderTaskPath('builder-script-task.js'),
         });
         return await workerManager.runTask('build-script', 'buildPolyfillsCommand', [options, dest], getScriptWorkerLogDest(options));
     }
@@ -203,7 +218,7 @@ export class ScriptBuilder {
     static async buildSystemJs(options: IBuildSystemJsOption) {
         await workerManager.registerTask({
             name: 'build-script',
-            path: join(__dirname, './build-script'),
+            path: resolveBuilderTaskPath('builder-script-task.js'),
         });
         return await workerManager.runTask('build-script', 'buildSystemJsCommand', [options], getScriptWorkerLogDest(options));
     }

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { join, resolve } from 'path';
 import { existsSync, readdirSync } from 'fs';
 import { SchemaBuildBaseOption, SchemaKnownBuildOptions, SchemaOtherPlatformBuildOption } from '../../api/builder/schema';
+import { GlobalPaths } from '../../global';
 
 export class BuilderHook {
     private dynamicPlatforms: string[] = [];
@@ -16,7 +17,7 @@ export class BuilderHook {
      */
     private scanPlatformPackages() {
         const platforms: string[] = [];
-        const platformsDir = resolve(__dirname, '../../../packages/platforms');
+        const platformsDir = join(GlobalPaths.workspace, 'packages/platforms');
 
         if (!existsSync(platformsDir)) {
             this.dynamicPlatforms = platforms;

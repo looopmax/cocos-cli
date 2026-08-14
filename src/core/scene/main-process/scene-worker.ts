@@ -1,11 +1,61 @@
 import { fork, ChildProcess } from 'child_process';
 import path from 'path';
+import fs from 'fs';
+import os from 'os';
 import { EventEmitter } from 'events';
 import { SceneProcessEventTag, SceneReadyChannel, SceneStartChannel, SceneWarmupReadyChannel } from '../common';
 import { Rpc } from './rpc';
 import { getServerUrl } from '../../../server';
 import { disposeModuleMessages, listenModuleMessages } from './messages';
 import { getAvailablePort } from '../../../server/utils';
+
+/**
+ * 录制 Scene worker 的 CPU profile 配置。
+ *
+ * 通过环境变量启用：
+ * - CC_SCENE_WORKER_CPU_PROF=1          : 开启录制（默认录制 30 秒）
+ * - CC_SCENE_WORKER_CPU_PROF_DURATION=60: 指定录制时长（秒）
+ * - CC_SCENE_WORKER_CPU_PROF_DIR=/path  : 指定 .cpuprofile 输出目录（默认 <项目temp>/cpuprofile）
+ *
+ * 产物可用 Chrome DevTools (Performance) 或 `node --prof-process` 分析。
+ */
+interface ICpuProfileConfig {
+    enabled: boolean;
+    durationMs: number;
+    outputDir: string;
+}
+
+function readCpuProfileConfig(): ICpuProfileConfig {
+    const enabled = process.env.CC_SCENE_WORKER_CPU_PROF === '1';
+    if (!enabled) {
+        return { enabled: false, durationMs: 0, outputDir: '' };
+    }
+    const duration = Number(process.env.CC_SCENE_WORKER_CPU_PROF_DURATION || 30);
+    const outputDir = process.env.CC_SCENE_WORKER_CPU_PROF_DIR
+        || path.join(os.tmpdir(), 'cocos-scene-cpuprofile');
+    return { enabled: true, durationMs: duration * 1000, outputDir };
+}
+
+function buildCpuProfileExecArgv(config: ICpuProfileConfig): string[] {
+    if (!config.enabled) {
+        return [];
+    }
+    try {
+        fs.mkdirSync(config.outputDir, { recursive: true });
+    } catch (e) {
+        console.error('[SceneWorker] 无法创建 cpuprofile 输出目录:', e);
+        return [];
+    }
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const name = `scene-worker-${process.pid}-${stamp}.cpuprofile`;
+    console.log(`[SceneWorker] 录制 CPU profile: ${path.join(config.outputDir, name)} (${config.durationMs}ms)`);
+    // --cpu-prof 在进程退出或收到 SIGUSR2 时输出；配合 CPU_PROF_DURATION 用超时 kill 保证落盘
+    return [
+        `--cpu-prof`,
+        `--cpu-prof-dir=${config.outputDir}`,
+        `--cpu-prof-name=${name}`,
+    ];
+}
 
 export interface ISceneWorkerEvents {
     'restart': boolean,
@@ -14,6 +64,21 @@ export interface ISceneWorkerEvents {
 export class SceneWorker {
 
     static ExitWorkerEvent = 'scene-process:exit';
+
+    /**
+     * 解析 scene process 入口文件路径。
+     *
+     * 优先使用 esbuild 打包后的 bundle（dist/bundle/scene-process-main.js），
+     * 若 bundle 不存在（纯 tsc 散文件开发模式）则回退到散文件入口。
+     */
+    static resolveSceneProcessPath(): string {
+        const { distRoot } = require('../../../global');
+        const bundlePath = path.join(distRoot, 'bundle', 'scene-process-main.js');
+        if (fs.existsSync(bundlePath)) {
+            return bundlePath;
+        }
+        return path.join(distRoot, 'core', 'scene', 'scene-process', 'main.js');
+    }
 
     private _process: ChildProcess | null = null;
     public get process(): ChildProcess {
@@ -82,18 +147,57 @@ export class SceneWorker {
                 const args = [
                     `--enginePath=${enginePath}`,
                 ];
-                const precessPath = path.join(__dirname, '../../../../dist/core/scene/scene-process/main.js');
+                const precessPath = SceneWorker.resolveSceneProcessPath();
                 const inspectPort = await getAvailablePort(9230);
                 console.log('--inspect= ' + inspectPort);
+                // CPU profile 录制配置（环境变量 CC_SCENE_WORKER_CPU_PROF 控制）
+                const cpuProfileConfig = readCpuProfileConfig();
+                const cpuProfileExecArgv = buildCpuProfileExecArgv(cpuProfileConfig);
                 this._process = fork(precessPath, args, {
                     detached: false,
                     stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
-                    execArgv: [`--inspect=${inspectPort}`],
+                    execArgv: [
+                        `--inspect=${inspectPort}`,
+                        ...cpuProfileExecArgv,
+                    ],
                 });
+
+                // 录制时长到达后，先优雅通知子进程退出（触发 --cpu-prof 落盘），
+                // 若未退出则延迟 SIGTERM 兜底。正常 stop 也会触发 --cpu-prof 落盘。
+                let cpuProfileTimer: NodeJS.Timeout | null = null;
+                if (cpuProfileConfig.enabled) {
+                    const gracefulExit = () => {
+                        const target = this._process;
+                        if (!target) {
+                            return;
+                        }
+                        console.log(`[SceneWorker] CPU profile 录制时长到 (${cpuProfileConfig.durationMs}ms)，停止 scene worker 以输出 profile`);
+                        try {
+                            target.send(SceneWorker.ExitWorkerEvent);
+                        } catch {
+                            try { target.kill('SIGTERM'); } catch { /* ignore */ }
+                            return;
+                        }
+                        // 兜底：2 秒后仍未退出则强制终止
+                        setTimeout(() => {
+                            if (target.exitCode === null && target.signalCode === null) {
+                                try { target.kill('SIGTERM'); } catch { /* ignore */ }
+                            }
+                        }, 2000);
+                    };
+                    cpuProfileTimer = setTimeout(gracefulExit, cpuProfileConfig.durationMs);
+                }
+                const cleanupCpuProfileTimer = () => {
+                    if (cpuProfileTimer) {
+                        clearTimeout(cpuProfileTimer);
+                        cpuProfileTimer = null;
+                    }
+                };
 
                 // 监听进程启动错误
                 const onError = (error: Error) => {
                     console.error('场景进程启动失败:', error);
+                    cleanupCpuProfileTimer();
                     this._process?.off('error', onError);
                     this._process?.off('exit', onEarlyExit);
                     this._process = null;
@@ -103,6 +207,7 @@ export class SceneWorker {
                 // 监听进程早期退出（启动失败）
                 const onEarlyExit = (code: number, signal: string | null) => {
                     console.error(`场景进程启动时退出 code:${code}, signal:${signal}`);
+                    cleanupCpuProfileTimer();
                     this._process?.off('error', onError);
                     this._process?.off('exit', onEarlyExit);
                     this._process = null;
@@ -113,6 +218,7 @@ export class SceneWorker {
                 let listenerPromise: Promise<void> | null = null;
                 const failStartup = (error: unknown) => {
                     console.error('注册场景进程监听器失败:', error);
+                    cleanupCpuProfileTimer();
                     this._process?.off('message', onReady);
                     this._process?.off('error', onError);
                     this._process?.off('exit', onEarlyExit);
@@ -126,6 +232,8 @@ export class SceneWorker {
                 const onReady = (msg: any) => {
                     if (msg === SceneWarmupReadyChannel) {
                         console.log('Scene process warmed up.');
+                        // 注意：此处不移除 CPU profile 录制 timer，
+                        // 录制应持续到时长到达或 worker 退出（见 gracefulExit）。
                         this.prewarmReady = true;
                         this._process?.off('message', onReady);
                         this._process?.off('error', onError);
@@ -140,6 +248,7 @@ export class SceneWorker {
                 // 设置启动超时（30秒）
                 startupTimer = setTimeout(() => {
                     console.error('场景进程启动超时');
+                    cleanupCpuProfileTimer();
                     this._process?.off('message', onReady);
                     this._process?.off('error', onError);
                     this._process?.off('exit', onEarlyExit);

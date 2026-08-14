@@ -2,6 +2,25 @@ import { IBuildTask, IPluginHookName } from '../../@types/protected';
 
 type TaskType = 'dataTasks' | 'settingTasks' | 'buildTasks' | 'md5Tasks' | 'postprocessTasks' | string;
 
+/**
+ * 任务模块静态注册表。
+ *
+ * 构建产物可能被 esbuild 打包成单文件 bundle，动态 `require(\`./tasks/${name}\`)`
+ * 在 bundle 中无法解析模块路径，因此改为静态 import + 映射表，同时保留
+ * 通过名称字符串访问的原有 API。
+ */
+const taskModuleMap: Record<string, () => IBuildTask> = {
+    'data-task/asset': () => require('./tasks/data-task/asset'),
+    'data-task/script': () => require('./tasks/data-task/script'),
+    'build-task/script': () => require('./tasks/build-task/script'),
+    'build-task/asset': () => require('./tasks/build-task/asset'),
+    'postprocess-task/suffix': () => require('./tasks/postprocess-task/suffix'),
+    'setting-task/asset': () => require('./tasks/setting-task/asset'),
+    'setting-task/script': () => require('./tasks/setting-task/script'),
+    'setting-task/options': () => require('./tasks/setting-task/options'),
+    'postprocess-task/template': () => require('./tasks/postprocess-task/template'),
+};
+
 export class TaskManager {
 
     private static readonly tasks: Record<TaskType, string[]> = {
@@ -62,11 +81,18 @@ export class TaskManager {
         if (!this.buildTaskMap[type]) {
             return this.buildTaskMap[type];
         }
-        return this.buildTaskMap[type] = TaskManager.tasks[type].map((name) => require(`./tasks/${name}`));
+        return this.buildTaskMap[type] = TaskManager.tasks[type].map((name) => taskModuleMap[name]());
     }
 
     public static getTaskHandleFromNames(taskNames: string[]) {
-        return taskNames.map((name) => require(`./tasks/${name}`));
+        return taskNames.map((name) => {
+            const load = taskModuleMap[name];
+            if (load) {
+                return load();
+            }
+            // 未知任务（插件自定义）回退到动态 require，此时散文件模式下可用
+            return require(`./tasks/${name}`);
+        });
     }
 
     public static getCustomTaskName(name: string) {

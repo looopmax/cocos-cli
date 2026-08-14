@@ -1,12 +1,15 @@
 
 import { ChildProcess, fork, ForkOptions, spawn } from 'child_process';
 import { join } from 'path';
+import { existsSync } from 'fs';
 import { IQuickSpawnOption } from '../../@types/protected';
 import project from '../../../project';
 import { GlobalPaths } from '../../../../global';
 
 // 获取 CPU 数量，有几个 CPU 就创建几个子进程，这样就可以最大化的利用机器性能
-const workerPath = join(__dirname, './sub-process');
+// 优先使用 esbuild bundle，回退到 tsc 散文件
+const bundleWorkerPath = join(GlobalPaths.workspace, 'dist', 'bundle', 'builder-sub-process.js');
+const workerPath = existsSync(bundleWorkerPath) ? bundleWorkerPath : join(__dirname, './sub-process');
 
 interface ChildProcessMessageInfo {
     type: string;

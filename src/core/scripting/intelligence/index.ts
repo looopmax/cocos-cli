@@ -3,6 +3,7 @@ import ps from 'path';
 import fs from 'fs-extra';
 import { getDatabaseModuleRootURL } from '../utils/db-module-url';
 import { StatsQuery } from '@cocos/ccbuild';
+import { distRoot } from '../../../global';
 import { Engine } from '../../engine';
 import { DBInfo } from '../@types/config-export';
 
@@ -259,7 +260,7 @@ export class TypeScriptConfigBuilder {
 
 
 function generateEngineDeclarationFile(engineRoot: string) {
-    const editorExportDir = ps.join(__dirname, '../../editor-export/');
+    const editorExportDir = ps.join(distRoot, 'core/scripting/editor-export');
     const dtsFiles = fs.existsSync(editorExportDir) ? fs.readdirSync(editorExportDir) : [];
     const dtsReferences = dtsFiles.map(file => `/// <reference path="${ps.join(editorExportDir, file)}"/>`).join('\n');
 

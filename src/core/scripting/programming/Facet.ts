@@ -226,7 +226,8 @@ export class ProgrammingFacet {
         // the CLI is invoked from an arbitrary working directory.
         if (typeof document !== 'undefined' && !document.baseURI) {
             const { pathToFileURL } = require('url');
-            const cliRoot = ps.resolve(__dirname, '..', '..', '..', '..');
+            const { projectRoot } = require('../../../global');
+            const cliRoot = projectRoot;
             (document as any).baseURI = pathToFileURL(ps.join(cliRoot, 'index.js')).href;
         }
 

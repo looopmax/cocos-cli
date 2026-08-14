@@ -11,6 +11,7 @@
 import * as path from 'path';
 import { pathExistsSync, readFileUtf8Sync } from '../../../filesystem';
 import { relative, resolve } from 'path';
+import { distRoot } from '../../../../global';
 
 export interface IEffectCompileRequest {
     type: 'build-effect';
@@ -71,8 +72,8 @@ async function loadEffectCompiler() {
 
             if (!(globalThis as any).EditorExtends) {
                 try {
-                    // dist/core/assets/asset-handler/assets -> dist/core/engine/editor-extends
-                    (globalThis as any).EditorExtends = require(path.join(__dirname, '../../../engine/editor-extends/index.js'));
+                    // dist/core/engine/editor-extends（bundle 模式下基于 distRoot 解析）
+                    (globalThis as any).EditorExtends = require(path.join(distRoot, 'core', 'engine', 'editor-extends', 'index.js'));
                 } catch {
                     // 缺少 EditorExtends 时引擎模块可能无法加载，但不阻塞
                 }
