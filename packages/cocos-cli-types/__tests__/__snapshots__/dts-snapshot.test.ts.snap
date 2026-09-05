@@ -8973,6 +8973,7 @@ export declare interface GlTFUserData {
         options: LODsOption[];
     };
 }
+export declare function hideAnimationGraphMotion(): void;
 export declare namespace i18n {
     export {
         i18n_2 as default
@@ -9431,6 +9432,7 @@ export declare interface IResolvedCustomJointTextureLayout {
     textureLength: number;
     contents: IResolvedChunkContent[];
 }
+export declare function isAnimationGraphMotionActive(): Promise<boolean>;
 export declare interface ISceneCommandProvider {
     request(module: string, method: string, args?: any[], options?: SceneCommandRequestOptions): Promise<any>;
     notify?(module: string, method: string, args?: any[]): void;
@@ -9725,6 +9727,8 @@ export declare interface ParticleAssetUserData {
     rotatePerSVar: number;
     spriteFrameUuid: string;
 }
+export declare function pauseAnimationGraphMotion(): void;
+export declare function playAnimationGraphMotion(): void;
 export declare interface PluginScriptInfo {
     file: string;
     uuid: string;
@@ -9830,6 +9834,10 @@ export declare interface ProjectInfo {
     [key: string]: any;
 }
 export declare type ProjectType = '2d' | '3d';
+export declare function queryAnimationGraphMotionImage(info: {
+    width: number;
+    height: number;
+}): Promise<unknown>;
 export declare function queryAssetConfigMap(): Promise<Record<string, IAssetConfig>>;
 export declare function queryAssetDBInfos(): Promise<Record<string, IAssetDBInfo>>;
 export declare function queryAssetDependencies(uuidOrUrl: string, type?: QueryAssetType): Promise<string[]>;
@@ -9897,6 +9905,16 @@ export declare namespace Scene {
         startupWorker,
         setCommandProvider,
         resetCommandProvider,
+        showAnimationGraphMotion,
+        hideAnimationGraphMotion,
+        setAnimationGraphMotionModel,
+        setAnimationGraphMotionTime,
+        playAnimationGraphMotion,
+        pauseAnimationGraphMotion,
+        stopAnimationGraphMotion,
+        setAnimationGraphMotionVariable,
+        isAnimationGraphMotionActive,
+        queryAnimationGraphMotionImage,
         ISceneCommandProvider,
         SceneCommandProviderRegistration,
         SceneCommandRequestOptions,
@@ -9961,6 +9979,9 @@ export declare function set<T>(key: string, value: T, scope?: ConfigurationScope
 export declare interface SetAnimationGraphInspectorPropertyRequest extends AnimationGraphInspectorPropertyOperationRequest {
     patch: IProperty | unknown;
 }
+export declare function setAnimationGraphMotionModel(uuid: string): Promise<void>;
+export declare function setAnimationGraphMotionTime(time: number): void;
+export declare function setAnimationGraphMotionVariable(name: string, value: number): void;
 export declare function setCommandProvider(provider: ISceneCommandProvider): SceneCommandProviderRegistration;
 export declare function setFileSystemProvider(provider: IAssetFileSystemProvider): void;
 export declare interface SharedSettings {
@@ -9978,6 +9999,7 @@ export declare interface SharedSettings {
         url: string;
     };
 }
+export declare function showAnimationGraphMotion(uuidOrUrlOrPath: string, target: AnimationGraphTarget): Promise<boolean>;
 export declare interface SimplifyOptions {
     targetRatio?: number;
     enableSmartLink?: boolean;
@@ -10036,6 +10058,7 @@ export declare function startCompileScript(assetChanges?: AssetChangeInfo[]): Pr
 export declare function startEngineCompilation(force?: boolean): Promise<void>;
 export declare function startupWorker(projectPath: string): Promise<void>;
 export declare function stop_2(): Promise<void>;
+export declare function stopAnimationGraphMotion(): void;
 export declare const SUPPORT_CREATE_TYPES: readonly ["animation-clip", "typescript", "auto-atlas", "effect", "scene", "prefab", "material", "texture-cube", "terrain", "physics-material", "label-atlas", "render-texture", "directory", "effect-header"];
 export declare enum TangentImportSetting {
     exclude = 0,
@@ -10192,13 +10215,47 @@ export { }
 
 exports[`DTS API compatibility scene.d.ts should match snapshot 1`] = `
 "import type { ChildProcess } from 'child_process';
+export declare type AnimationGraphMotionAddress =
+| (AnimationGraphStateAddress & { level: number[] })
+| ({ poseGraph: AnimationGraphPoseGraphContext; nodeId: number; level: number[] });
+export declare type AnimationGraphPoseGraphAddress =
+| { layerIndex: number; stateMachinePath: number[]; stateIndex: number }
+| { poseGraph: AnimationGraphPoseGraphContext };
+export declare type AnimationGraphPoseGraphContext =
+| { kind: 'state-pose-graph'; stateMachine: AnimationGraphStateMachineContext; stateIndex: number }
+| { kind: 'layer-stash'; layerIndex: number; stashName: string };
+export declare type AnimationGraphPoseNodeAddress = AnimationGraphPoseGraphAddress & { nodeId: number };
+export declare type AnimationGraphStateAddress = AnimationGraphStateMachineAddress & { stateIndex: number };
+export declare type AnimationGraphStateMachineAddress =
+| { layerIndex: number; stateMachinePath: number[] }
+| { stateMachine: AnimationGraphStateMachineContext };
+export declare type AnimationGraphStateMachineContext =
+| { kind: 'layer-state-machine'; layerIndex: number; stateMachinePath: number[] }
+| { kind: 'pose-node-state-machine'; poseGraph: AnimationGraphPoseGraphContext; nodeId: number }
+| { kind: 'sub-state-machine'; stateMachine: AnimationGraphStateMachineContext; stateIndex: number };
+export declare type AnimationGraphTarget =
+| { kind: 'layer'; layerIndex: number }
+| ({ kind: 'state' } & AnimationGraphStateAddress)
+| ({ kind: 'transition'; transitionIndex: number } & AnimationGraphStateMachineAddress)
+| ({ kind: 'motion' } & AnimationGraphMotionAddress)
+| ({ kind: 'pose-node' } & AnimationGraphPoseNodeAddress)
+| ({ kind: 'pose-input'; inputId: string } & AnimationGraphPoseNodeAddress)
+| ({ kind: 'state-component'; componentIndex: number } & AnimationGraphStateAddress);
+export declare function hideAnimationGraphMotion(): void;
 export declare function init(): Promise<void>;
+export declare function isAnimationGraphMotionActive(): Promise<boolean>;
 export declare interface ISceneCommandProvider {
     request(module: string, method: string, args?: any[], options?: SceneCommandRequestOptions): Promise<any>;
     notify?(module: string, method: string, args?: any[]): void;
     isConnect?(): boolean | undefined;
     dispose?(): void;
 }
+export declare function pauseAnimationGraphMotion(): void;
+export declare function playAnimationGraphMotion(): void;
+export declare function queryAnimationGraphMotionImage(info: {
+    width: number;
+    height: number;
+}): Promise<unknown>;
 export declare function resetCommandProvider(): void;
 export declare interface SceneCommandProviderRegistration {
     dispose(): void;
@@ -10206,8 +10263,13 @@ export declare interface SceneCommandProviderRegistration {
 export declare interface SceneCommandRequestOptions {
     timeout?: number;
 }
+export declare function setAnimationGraphMotionModel(uuid: string): Promise<void>;
+export declare function setAnimationGraphMotionTime(time: number): void;
+export declare function setAnimationGraphMotionVariable(name: string, value: number): void;
 export declare function setCommandProvider(provider: ISceneCommandProvider): SceneCommandProviderRegistration;
+export declare function showAnimationGraphMotion(uuidOrUrlOrPath: string, target: AnimationGraphTarget): Promise<boolean>;
 export declare function startupWorker(projectPath: string): Promise<void>;
+export declare function stopAnimationGraphMotion(): void;
 export declare class WorkerSceneCommandProvider implements ISceneCommandProvider {
     private readonly rpc;
     constructor(process: ChildProcess | NodeJS.Process);
