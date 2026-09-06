@@ -71,14 +71,14 @@ export interface MotionPreviewDesc {
  */
 export interface IMotionPreviewService {
     showMotion(desc: MotionPreviewDesc): Promise<boolean>;
-    hideMotion(): void;
+    hideMotion(): Promise<void>;
     setMotionModel(uuid: string): Promise<void>;
-    setMotionTime(time: number): void;
-    playMotion(): void;
-    pauseMotion(): void;
-    stopMotion(): void;
-    setMotionVariable(name: string, value: number): void;
-    setMotionParameter(axis: 'value' | 'x' | 'y', value: number): void;
+    setMotionTime(time: number): Promise<void>;
+    playMotion(): Promise<void>;
+    pauseMotion(): Promise<void>;
+    stopMotion(): Promise<void>;
+    setMotionVariable(name: string, value: number): Promise<void>;
+    setMotionParameter(axis: 'value' | 'x' | 'y', value: number): Promise<void>;
     getMotionTimelineStats(): Promise<{ timeLineLength: number } | null>;
     isMotionActive(): Promise<boolean>;
     queryMotionImage(info: { width: number; height: number }): Promise<unknown>;

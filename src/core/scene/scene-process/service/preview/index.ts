@@ -1,5 +1,5 @@
 import { PreviewBase } from './preview-base';
-import { scenePreview, ScenePreview } from './scene-preview';
+import { scenePreview } from './scene-preview';
 import { MiniPreview } from './mini-preview';
 import { MaterialPreview } from './material-preview';
 import { ModelPreview } from './model-preview';
@@ -77,8 +77,8 @@ export class PreviewService extends BaseService<IPreviewEvents> implements IPrev
 
     // importer name → preview type 的映射（用于 assetType 为 cc.Asset 等泛型的回退）
     private static readonly IMPORTER_MAP: Record<string, string> = {
-        'gltf': 'model',
-        'fbx': 'model',
+        gltf: 'model',
+        fbx: 'model',
         'spine-data': 'spine',
     };
 
@@ -120,40 +120,40 @@ export class PreviewService extends BaseService<IPreviewEvents> implements IPrev
         return this.motionPreview.showMotion(desc);
     }
 
-    public hideMotion(): void {
+    public async hideMotion(): Promise<void> {
         // 结束未完成的相机手势，避免调用方在释放事件丢失后污染下一次预览。
         if (this.motionPreview.isActive) {
             this.motionPreview.onMouseUp({ x: 0, y: 0 });
         }
-        this.motionPreview.hideMotionPreview();
+        await this.motionPreview.hideMotionPreview();
     }
 
     public async setMotionModel(uuid: string): Promise<void> {
         await this.motionPreview.setModel(uuid);
     }
 
-    public setMotionTime(time: number): void {
-        this.motionPreview.setTimeMotionPreview(time);
+    public async setMotionTime(time: number): Promise<void> {
+        await this.motionPreview.setTimeMotionPreview(time);
     }
 
-    public playMotion(): void {
-        this.motionPreview.playMotionPreview();
+    public async playMotion(): Promise<void> {
+        await this.motionPreview.playMotionPreview();
     }
 
-    public pauseMotion(): void {
-        this.motionPreview.pauseMotionPreview();
+    public async pauseMotion(): Promise<void> {
+        await this.motionPreview.pauseMotionPreview();
     }
 
-    public stopMotion(): void {
-        this.motionPreview.stopMotionPreview();
+    public async stopMotion(): Promise<void> {
+        await this.motionPreview.stopMotionPreview();
     }
 
-    public setMotionVariable(name: string, value: number): void {
-        this.motionPreview.setMotionPreviewVariable(name, value);
+    public async setMotionVariable(name: string, value: number): Promise<void> {
+        await this.motionPreview.setMotionPreviewVariable(name, value);
     }
 
-    public setMotionParameter(axis: 'value' | 'x' | 'y', value: number): void {
-        this.motionPreview.setMotionPreviewParameter(axis, value);
+    public async setMotionParameter(axis: 'value' | 'x' | 'y', value: number): Promise<void> {
+        await this.motionPreview.setMotionPreviewParameter(axis, value);
     }
 
     public async getMotionTimelineStats(): Promise<{ timeLineLength: number } | null> {

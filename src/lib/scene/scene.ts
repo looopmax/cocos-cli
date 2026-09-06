@@ -54,8 +54,8 @@ export async function showMotion(desc: MotionPreviewDesc): Promise<boolean> {
 }
 
 /** 隐藏当前 Motion 预览。 */
-export function hideMotion(): void {
-    Scene.Preview.hideMotion();
+export function hideMotion(): Promise<void> {
+    return Scene.Preview.hideMotion();
 }
 
 /** 为 Motion 预览设置展示模型资源。 @param uuid 模型资源 UUID。 */
@@ -64,33 +64,33 @@ export async function setMotionModel(uuid: string): Promise<void> {
 }
 
 /** 设置 Motion 预览的采样时间。 @param time 时间（秒）。 */
-export function setMotionTime(time: number): void {
-    Scene.Preview.setMotionTime(time);
+export function setMotionTime(time: number): Promise<void> {
+    return Scene.Preview.setMotionTime(time);
 }
 
 /** 播放 Motion 预览。 */
-export function playMotion(): void {
-    Scene.Preview.playMotion();
+export function playMotion(): Promise<void> {
+    return Scene.Preview.playMotion();
 }
 
 /** 暂停 Motion 预览。 */
-export function pauseMotion(): void {
-    Scene.Preview.pauseMotion();
+export function pauseMotion(): Promise<void> {
+    return Scene.Preview.pauseMotion();
 }
 
 /** 停止 Motion 预览。 */
-export function stopMotion(): void {
-    Scene.Preview.stopMotion();
+export function stopMotion(): Promise<void> {
+    return Scene.Preview.stopMotion();
 }
 
 /** 设置 Motion 预览使用的变量值。 @param name 变量名。 @param value 变量值。 */
-export function setMotionVariable(name: string, value: number): void {
-    Scene.Preview.setMotionVariable(name, value);
+export function setMotionVariable(name: string, value: number): Promise<void> {
+    return Scene.Preview.setMotionVariable(name, value);
 }
 
 /** 设置 Motion 预览中 Blend 参数的临时值，不回写任何资产。 @param axis Blend 1D 使用 value，Blend 2D 使用 x/y。 @param value 参数值。 */
-export function setMotionParameter(axis: 'value' | 'x' | 'y', value: number): void {
-    Scene.Preview.setMotionParameter(axis, value);
+export function setMotionParameter(axis: 'value' | 'x' | 'y', value: number): Promise<void> {
+    return Scene.Preview.setMotionParameter(axis, value);
 }
 
 /** 查询 Motion 预览时间轴长度。 @returns 当前 Motion 的时间轴统计，尚未建立预览时返回 null。 */

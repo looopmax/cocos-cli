@@ -15,36 +15,36 @@ export const PreviewProxy: IMotionPreviewService = {
         return result === true;
     },
 
-    hideMotion(): void {
-        void Rpc.getInstance().request('Preview', 'hideMotion', []);
+    hideMotion(): Promise<void> {
+        return Rpc.getInstance().request('Preview', 'hideMotion', []);
     },
 
     setMotionModel(uuid: string): Promise<void> {
         return Rpc.getInstance().request('Preview', 'setMotionModel', [uuid]);
     },
 
-    setMotionTime(time: number): void {
-        void Rpc.getInstance().request('Preview', 'setMotionTime', [time]);
+    setMotionTime(time: number): Promise<void> {
+        return Rpc.getInstance().request('Preview', 'setMotionTime', [time]);
     },
 
-    playMotion(): void {
-        void Rpc.getInstance().request('Preview', 'playMotion', []);
+    playMotion(): Promise<void> {
+        return Rpc.getInstance().request('Preview', 'playMotion', []);
     },
 
-    pauseMotion(): void {
-        void Rpc.getInstance().request('Preview', 'pauseMotion', []);
+    pauseMotion(): Promise<void> {
+        return Rpc.getInstance().request('Preview', 'pauseMotion', []);
     },
 
-    stopMotion(): void {
-        void Rpc.getInstance().request('Preview', 'stopMotion', []);
+    stopMotion(): Promise<void> {
+        return Rpc.getInstance().request('Preview', 'stopMotion', []);
     },
 
-    setMotionVariable(name: string, value: number): void {
-        void Rpc.getInstance().request('Preview', 'setMotionVariable', [name, value]);
+    setMotionVariable(name: string, value: number): Promise<void> {
+        return Rpc.getInstance().request('Preview', 'setMotionVariable', [name, value]);
     },
 
-    setMotionParameter(axis: 'value' | 'x' | 'y', value: number): void {
-        void Rpc.getInstance().request('Preview', 'setMotionParameter', [axis, value]);
+    setMotionParameter(axis: 'value' | 'x' | 'y', value: number): Promise<void> {
+        return Rpc.getInstance().request('Preview', 'setMotionParameter', [axis, value]);
     },
 
     getMotionTimelineStats(): Promise<{ timeLineLength: number } | null> {
