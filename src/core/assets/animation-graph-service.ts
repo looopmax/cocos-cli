@@ -134,7 +134,8 @@ class AnimationGraphAssetService {
      *
      * @param uuidOrUrlOrPath - 动画图资源（uuid / url / 路径）。
      * @param target - 目标 Motion 的地址，与 Inspector 使用的 `AnimationGraphTarget` 一致。
-     * @returns Motion 预览数据；目标不存在时 `motion` 为 null。
+     * @returns Motion 预览数据。
+     * @throws {AnimationGraphEditError} 目标不存在或目标不是有效 Motion 时抛出 `TARGET_NOT_FOUND`。
      *
      * ```mermaid
      * flowchart LR

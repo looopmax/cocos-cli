@@ -13,6 +13,7 @@ import * as serializedData from '../serialized-data';
 import * as materialService from '../material-service';
 import {
     extractImagePixelsFromFile,
+    resolveImageSourceFile,
     type IExtractedImagePixels,
     type IImagePixelExtractionOptions,
 } from '../image-processing';
@@ -101,11 +102,15 @@ class AssetManager extends EventEmitter {
         urlOrUUIDOrPath: string,
         options: IImagePixelExtractionOptions,
     ): Promise<IExtractedImagePixels | null> {
-        const assetInfo = this.queryAssetInfo(urlOrUUIDOrPath);
-        if (!assetInfo?.file) {
+        const asset = this.queryAsset(urlOrUUIDOrPath);
+        if (!asset) {
             return null;
         }
-        return extractImagePixelsFromFile(assetInfo.file, options);
+        const file = resolveImageSourceFile(asset);
+        if (!file) {
+            return null;
+        }
+        return extractImagePixelsFromFile(file, options);
     }
 
     getEffectBinPath() {

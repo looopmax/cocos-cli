@@ -6738,14 +6738,14 @@ export declare interface ImageMeta {
 }
 export declare interface IMotionPreviewService {
     showMotion(desc: MotionPreviewDesc): Promise<boolean>;
-    hideMotion(): void;
+    hideMotion(): Promise<void>;
     setMotionModel(uuid: string): Promise<void>;
-    setMotionTime(time: number): void;
-    playMotion(): void;
-    pauseMotion(): void;
-    stopMotion(): void;
-    setMotionVariable(name: string, value: number): void;
-    setMotionParameter(axis: 'value' | 'x' | 'y', value: number): void;
+    setMotionTime(time: number): Promise<void>;
+    playMotion(): Promise<void>;
+    pauseMotion(): Promise<void>;
+    stopMotion(): Promise<void>;
+    setMotionVariable(name: string, value: number): Promise<void>;
+    setMotionParameter(axis: 'value' | 'x' | 'y', value: number): Promise<void>;
     getMotionTimelineStats(): Promise<{
         timeLineLength: number;
     } | null>;
@@ -9011,7 +9011,7 @@ export declare interface GlTFUserData {
         options: LODsOption[];
     };
 }
-export declare function hideMotion(): void;
+export declare function hideMotion(): Promise<void>;
 export declare namespace i18n {
     export {
         i18n_2 as default
@@ -9822,8 +9822,8 @@ export declare interface ParticleAssetUserData {
     rotatePerSVar: number;
     spriteFrameUuid: string;
 }
-export declare function pauseMotion(): void;
-export declare function playMotion(): void;
+export declare function pauseMotion(): Promise<void>;
+export declare function playMotion(): Promise<void>;
 export declare interface PluginScriptInfo {
     file: string;
     uuid: string;
@@ -10083,9 +10083,9 @@ export declare interface SetAnimationGraphInspectorPropertyRequest extends Anima
 export declare function setCommandProvider(provider: ISceneCommandProvider): SceneCommandProviderRegistration;
 export declare function setFileSystemProvider(provider: IAssetFileSystemProvider): void;
 export declare function setMotionModel(uuid: string): Promise<void>;
-export declare function setMotionParameter(axis: 'value' | 'x' | 'y', value: number): void;
-export declare function setMotionTime(time: number): void;
-export declare function setMotionVariable(name: string, value: number): void;
+export declare function setMotionParameter(axis: 'value' | 'x' | 'y', value: number): Promise<void>;
+export declare function setMotionTime(time: number): Promise<void>;
+export declare function setMotionVariable(name: string, value: number): Promise<void>;
 export declare interface SharedSettings {
     useDefineForClassFields: boolean;
     allowDeclareFields: boolean;
@@ -10160,7 +10160,7 @@ export declare function startCompileScript(assetChanges?: AssetChangeInfo[]): Pr
 export declare function startEngineCompilation(force?: boolean): Promise<void>;
 export declare function startupWorker(projectPath: string): Promise<void>;
 export declare function stop_2(): Promise<void>;
-export declare function stopMotion(): void;
+export declare function stopMotion(): Promise<void>;
 export declare const SUPPORT_CREATE_TYPES: readonly ["animation-clip", "typescript", "auto-atlas", "effect", "scene", "prefab", "material", "texture-cube", "terrain", "physics-material", "label-atlas", "render-texture", "directory", "effect-header"];
 export declare enum TangentImportSetting {
     exclude = 0,
@@ -10320,7 +10320,7 @@ exports[`DTS API compatibility scene.d.ts should match snapshot 1`] = `
 export declare function getMotionTimelineStats(): Promise<{
     timeLineLength: number;
 } | null>;
-export declare function hideMotion(): void;
+export declare function hideMotion(): Promise<void>;
 export declare function init(): Promise<void>;
 export declare interface ISceneCommandProvider {
     request(module: string, method: string, args?: any[], options?: SceneCommandRequestOptions): Promise<any>;
@@ -10386,8 +10386,8 @@ export declare function onMotionMouseWheel(action: {
     wheelDeltaY: number;
     wheelDeltaX: number;
 }): Promise<void>;
-export declare function pauseMotion(): void;
-export declare function playMotion(): void;
+export declare function pauseMotion(): Promise<void>;
+export declare function playMotion(): Promise<void>;
 export declare function queryMotionImage(info: {
     width: number;
     height: number;
@@ -10401,12 +10401,12 @@ export declare interface SceneCommandRequestOptions {
 }
 export declare function setCommandProvider(provider: ISceneCommandProvider): SceneCommandProviderRegistration;
 export declare function setMotionModel(uuid: string): Promise<void>;
-export declare function setMotionParameter(axis: 'value' | 'x' | 'y', value: number): void;
-export declare function setMotionTime(time: number): void;
-export declare function setMotionVariable(name: string, value: number): void;
+export declare function setMotionParameter(axis: 'value' | 'x' | 'y', value: number): Promise<void>;
+export declare function setMotionTime(time: number): Promise<void>;
+export declare function setMotionVariable(name: string, value: number): Promise<void>;
 export declare function showMotion(desc: MotionPreviewDesc): Promise<boolean>;
 export declare function startupWorker(projectPath: string): Promise<void>;
-export declare function stopMotion(): void;
+export declare function stopMotion(): Promise<void>;
 export declare class WorkerSceneCommandProvider implements ISceneCommandProvider {
     private readonly rpc;
     constructor(process: ChildProcess | NodeJS.Process);
