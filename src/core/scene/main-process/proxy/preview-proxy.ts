@@ -3,53 +3,76 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { AnimationGraphTarget } from '../../../assets/@types/public';
-import type { IAnimationGraphMotionPreviewService } from '../../common';
+import type { MotionPreviewDesc, IMotionPreviewService } from '../../common/preview';
 import { Rpc } from '../rpc';
 
 /**
  * 场景进程 PreviewService 的主进程 RPC 代理。
  */
-export const PreviewProxy: IAnimationGraphMotionPreviewService = {
-    async showAnimationGraphMotion(uuidOrUrlOrPath: string, target: AnimationGraphTarget): Promise<boolean> {
-        const result = await Rpc.getInstance().request('Preview', 'showAnimationGraphMotion', [uuidOrUrlOrPath, target]);
+export const PreviewProxy: IMotionPreviewService = {
+    async showMotion(desc: MotionPreviewDesc): Promise<boolean> {
+        const result = await Rpc.getInstance().request('Preview', 'showMotion', [desc]);
         return result === true;
     },
 
-    hideAnimationGraphMotion(): void {
-        void Rpc.getInstance().request('Preview', 'hideAnimationGraphMotion', []);
+    hideMotion(): void {
+        void Rpc.getInstance().request('Preview', 'hideMotion', []);
     },
 
-    setAnimationGraphMotionModel(uuid: string): Promise<void> {
-        return Rpc.getInstance().request('Preview', 'setAnimationGraphMotionModel', [uuid]);
+    setMotionModel(uuid: string): Promise<void> {
+        return Rpc.getInstance().request('Preview', 'setMotionModel', [uuid]);
     },
 
-    setAnimationGraphMotionTime(time: number): void {
-        void Rpc.getInstance().request('Preview', 'setAnimationGraphMotionTime', [time]);
+    setMotionTime(time: number): void {
+        void Rpc.getInstance().request('Preview', 'setMotionTime', [time]);
     },
 
-    playAnimationGraphMotion(): void {
-        void Rpc.getInstance().request('Preview', 'playAnimationGraphMotion', []);
+    playMotion(): void {
+        void Rpc.getInstance().request('Preview', 'playMotion', []);
     },
 
-    pauseAnimationGraphMotion(): void {
-        void Rpc.getInstance().request('Preview', 'pauseAnimationGraphMotion', []);
+    pauseMotion(): void {
+        void Rpc.getInstance().request('Preview', 'pauseMotion', []);
     },
 
-    stopAnimationGraphMotion(): void {
-        void Rpc.getInstance().request('Preview', 'stopAnimationGraphMotion', []);
+    stopMotion(): void {
+        void Rpc.getInstance().request('Preview', 'stopMotion', []);
     },
 
-    setAnimationGraphMotionVariable(name: string, value: number): void {
-        void Rpc.getInstance().request('Preview', 'setAnimationGraphMotionVariable', [name, value]);
+    setMotionVariable(name: string, value: number): void {
+        void Rpc.getInstance().request('Preview', 'setMotionVariable', [name, value]);
     },
 
-    async isAnimationGraphMotionActive(): Promise<boolean> {
-        const result = await Rpc.getInstance().request('Preview', 'isAnimationGraphMotionActive', []);
+    setMotionParameter(axis: 'value' | 'x' | 'y', value: number): void {
+        void Rpc.getInstance().request('Preview', 'setMotionParameter', [axis, value]);
+    },
+
+    getMotionTimelineStats(): Promise<{ timeLineLength: number } | null> {
+        return Rpc.getInstance().request('Preview', 'getMotionTimelineStats', []);
+    },
+
+    async isMotionActive(): Promise<boolean> {
+        const result = await Rpc.getInstance().request('Preview', 'isMotionActive', []);
         return result === true;
     },
 
-    queryAnimationGraphMotionImage(info: { width: number; height: number }): Promise<unknown> {
-        return Rpc.getInstance().request('Preview', 'queryAnimationGraphMotionImage', [info]);
+    queryMotionImage(info: { width: number; height: number }): Promise<unknown> {
+        return Rpc.getInstance().request('Preview', 'queryMotionImage', [info]);
+    },
+
+    onMotionMouseDown(action: { x: number; y: number; button: number }): Promise<void> {
+        return Rpc.getInstance().request('Preview', 'onMotionMouseDown', [action]);
+    },
+
+    onMotionMouseMove(action: { movementX: number; movementY: number }): Promise<void> {
+        return Rpc.getInstance().request('Preview', 'onMotionMouseMove', [action]);
+    },
+
+    onMotionMouseUp(action: { x: number; y: number }): Promise<void> {
+        return Rpc.getInstance().request('Preview', 'onMotionMouseUp', [action]);
+    },
+
+    onMotionMouseWheel(action: { wheelDeltaY: number; wheelDeltaX: number }): Promise<void> {
+        return Rpc.getInstance().request('Preview', 'onMotionMouseWheel', [action]);
     },
 };

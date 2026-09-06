@@ -8,14 +8,10 @@ import { InteractivePreview, getBoundaryOfMeshNodes } from './interactive-previe
 import { loadPreviewAsset, removePreviewAssetCache } from './asset-reload';
 import { Rpc } from '../../rpc';
 import { Service } from '../core/decorator';
-import type {
-    AnimationGraphMotionPreviewData,
-    AnimationGraphMotionView,
-    AnimationGraphTarget,
-} from '../../../../assets/@types/public';
+import type { MotionPreviewDesc, MotionPreviewDescNode } from '../../../common/preview';
 
 /**
- * engine editor 模块：与动画图资源服务一致的加载方式（scene-process 的
+ * engine editor 模块：与动画剪辑预览一致的加载方式（scene-process 的
  * engine-bootstrap 已把 cc/editor/new-gen-anim 作为必须模块加载）。
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -25,42 +21,45 @@ function getNewGenAnim(): any {
 }
 
 /**
- * Animation Graph Motion 预览器。
+ * 通用 Motion 预览器。
  *
- * 负责加载预览 Prefab、根据「目标 Motion 的结构化视图 + 图内变量」重建引擎 Motion、
- * 并驱动 `MotionPreviewer` 采样姿态到模型节点上；`queryPreviewData` 由外层按帧轮询取图。
+ * 只理解中立的 {@link MotionPreviewDesc}：由业务方把各自资产数据翻译成描述后传入，
+ * 本类负责加载预览 Prefab、按描述重建引擎 Motion、并驱动 `MotionPreviewer`
+ * 采样姿态到模型节点上；`queryPreviewData` 由外层按帧轮询取图。
  *
  * ```mermaid
  * sequenceDiagram
  *     participant PinK as PinK 主进程(Preview 代理)
- *     participant Preview as AnimationGraphMotionPreview(scene-process)
- *     participant Asset as assetManager RPC(main-process)
+ *     participant Preview as MotionPreview(scene-process)
  *     participant Engine as MotionPreviewer(cc/editor/new-gen-anim)
- *     PinK->>Preview: showMotionPreview(uuid, target)
- *     Preview->>Asset: request('assetManager','queryAnimationGraphMotionPreviewData',...)
- *     Asset-->>Preview: { motion: AnimationGraphMotionView, variables }
- *     Preview->>Engine: new MotionPreviewer(modelNode) + setMotion(rebuilt motion)
- *     PinK->>Preview: setTime / play / pause / stop / setVariable
+ *     PinK->>Preview: showMotion(desc)
+ *     Preview->>Engine: new MotionPreviewer(modelNode) + setMotion(built motion)
+ *     PinK->>Preview: setMotionTime / playMotion / pauseMotion / setMotionVariable
  *     Preview->>Engine: setTime(time) + evaluate()
  *     PinK->>Preview: queryPreviewData({width,height})
  *     Preview-->>PinK: RGBA buffer(模型当前姿态帧)
  * ```
  */
-export class AnimationGraphMotionPreview extends InteractivePreview {
+export class MotionPreview extends InteractivePreview {
     private lightComp: DirectionalLight | any;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private motionPreviewer: any = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private motionPreview: any = null;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private readonly loadedClips = new Map<string, any>();
     private active = false;
     private playing = false;
     private time = 0;
     private lastPlayTick = 0;
-    // 未等到模型时的待处理 Motion（webview 可能先选 Motion 再拖入模型）。
-    private pendingMotion: { uuid: string; target: AnimationGraphTarget } | null = null;
+    // 最近一次外部时间下发（Inspector rAF 时钟经 show/play/stop/setTime 写入）的时间戳；
+    // headless 消费者（MCP/CLI 只轮询取帧）超过阈值未下发时，queryPreviewData 自推进。
+    private lastExternalTimeAt = 0;
+    // 未等到模型时的待处理描述（调用方可能先下发 Motion 描述、再设置模型）。
+    private pendingDesc: MotionPreviewDesc | null = null;
 
     public createNodes(scene: Scene) {
-        this.lightComp = new Node('Animation Graph Motion Preview Light').addComponent(DirectionalLight);
+        this.lightComp = new Node('Motion Preview Light').addComponent(DirectionalLight);
         this.lightComp.node.setRotationFromEuler(-45, -45, 0);
         this.lightComp.node.parent = scene;
     }
@@ -75,7 +74,7 @@ export class AnimationGraphMotionPreview extends InteractivePreview {
 
     public async setModel(uuid: string): Promise<void> {
         if (!uuid) {
-            console.warn(`Failed to set model in Animation Graph Motion preview, by uuid: ${uuid}`);
+            console.warn(`Failed to set model in Motion preview, by uuid: ${uuid}`);
             return;
         }
 
@@ -100,14 +99,14 @@ export class AnimationGraphMotionPreview extends InteractivePreview {
         // 重建 MotionPreviewer（绑定到新模型根节点的骨骼层级）。
         this._resetMotionPreviewer();
 
-        // 若此前已下发 Motion，模型就绪后继续接入。
-        if (this.pendingMotion) {
-            const pending = this.pendingMotion;
-            this.pendingMotion = null;
+        // 若此前已下发描述，模型就绪后继续接入。
+        if (this.pendingDesc) {
+            const pending = this.pendingDesc;
+            this.pendingDesc = null;
             try {
-                await this._attachMotion(pending.uuid, pending.target);
+                await this._attachMotion(pending);
             } catch (error) {
-                console.warn(`[AnimationGraphMotionPreview] Failed to attach pending motion:`, error);
+                console.warn(`[MotionPreview] Failed to attach pending motion:`, error);
             }
         }
 
@@ -115,35 +114,37 @@ export class AnimationGraphMotionPreview extends InteractivePreview {
         this.resetCameraView();
     }
 
-    public async showMotionPreview(uuidOrUrlOrPath: string, target: AnimationGraphTarget): Promise<boolean> {
+    public async showMotion(desc: MotionPreviewDesc): Promise<boolean> {
         if (!this._modelNode) {
-            // 暂无模型：记住 Motion，等 setModel 后接入；返回 false 表示"等待模型"。
-            this.pendingMotion = { uuid: uuidOrUrlOrPath, target };
+            // 暂无模型：记住描述，等 setModel 后接入；返回 false 表示“等待模型”。
+            this.pendingDesc = desc;
             return false;
         }
-        this.pendingMotion = null;
-        await this._attachMotion(uuidOrUrlOrPath, target);
+        this.pendingDesc = null;
+        await this._attachMotion(desc);
         this.active = true;
         this.time = 0;
         this.lastPlayTick = Date.now();
+        this.lastExternalTimeAt = Date.now();
         this._evaluate();
         return true;
     }
 
     public hideMotionPreview(): void {
-        this.pendingMotion = null;
+        this.pendingDesc = null;
         this.active = false;
         this.pauseMotionPreview();
         if (this.motionPreviewer) {
             this.motionPreviewer.destroy?.();
             this.motionPreviewer = null;
         }
+        this.motionPreview = null;
         this.hide();
     }
 
     public resetMotionPreview(): void {
         this.time = 0;
-        this.pendingMotion = null;
+        this.pendingDesc = null;
         this._resetMotionPreviewer();
     }
 
@@ -153,6 +154,7 @@ export class AnimationGraphMotionPreview extends InteractivePreview {
         }
         this.playing = true;
         this.lastPlayTick = Date.now();
+        this.lastExternalTimeAt = Date.now();
         this._evaluate();
     }
 
@@ -163,17 +165,20 @@ export class AnimationGraphMotionPreview extends InteractivePreview {
     public stopMotionPreview(): void {
         this.playing = false;
         this.time = 0;
+        this.lastExternalTimeAt = Date.now();
         this._evaluate();
     }
 
     public setTimeMotionPreview(time: number): void {
         this.time = Math.max(0, time);
+        this.lastPlayTick = Date.now();
+        this.lastExternalTimeAt = Date.now();
         this._evaluate();
     }
 
     /**
-     * 更新预览变量。变量实例当前未随数据契约注入 MotionPreviewer（见方案文档的
-     * 风险点），因此仅记录调用，等变量实例搭建完成后生效。
+     * 更新预览变量。变量实例由业务方随描述下发（静态值）或经本方法注入
+     * MotionPreviewer（等价于引擎 updateVariable 语义）。
      */
     public setMotionPreviewVariable(name: string, value: number): void {
         if (!this.motionPreviewer) {
@@ -182,7 +187,33 @@ export class AnimationGraphMotionPreview extends InteractivePreview {
         try {
             this.motionPreviewer.updateVariable(name, value);
         } catch (error) {
-            console.warn(`[AnimationGraphMotionPreview] setVariable failed:`, error);
+            console.warn(`[MotionPreview] setVariable failed:`, error);
+        }
+    }
+
+    /** 设置预览中 Blend Motion 的临时参数值，不回写任何资产。 */
+    public setMotionPreviewParameter(axis: 'value' | 'x' | 'y', value: number): void {
+        if (!this.motionPreview || !Number.isFinite(value)) {
+            return;
+        }
+        try {
+            const api = getNewGenAnim();
+            if (this.motionPreview instanceof api.AnimationBlend1D && axis === 'value') {
+                this.motionPreview.param.value = value;
+            } else if (this.motionPreview instanceof api.AnimationBlend2D) {
+                if (axis === 'x') {
+                    this.motionPreview.paramX.value = value;
+                } else if (axis === 'y') {
+                    this.motionPreview.paramY.value = value;
+                } else {
+                    return;
+                }
+            } else {
+                return;
+            }
+            this._evaluate();
+        } catch (error) {
+            console.warn(`[MotionPreview] setParameter failed:`, error);
         }
     }
 
@@ -198,7 +229,10 @@ export class AnimationGraphMotionPreview extends InteractivePreview {
     }
 
     public async queryPreviewData(info: { width: number; height: number }) {
-        if (this.playing && this.active) {
+        if (this.playing && this.active && Date.now() - this.lastExternalTimeAt > 500) {
+            // Headless 兜底：Inspector 以外的消费者（MCP/CLI）只轮询取帧、不下发 setTime，
+            // 由场景进程按 wall-clock 推进；高频下发 setTime 的调用方存在时跳过，
+            // 避免两边各推进一次造成双倍播放速度。
             const now = Date.now();
             const delta = Math.max(0, (now - this.lastPlayTick) / 1000);
             this.lastPlayTick = now;
@@ -211,45 +245,41 @@ export class AnimationGraphMotionPreview extends InteractivePreview {
     }
 
     /**
-     * 重建引擎 Motion 并喂给 MotionPreviewer。
+     * 按中立描述重建引擎 Motion 并喂给 MotionPreviewer。
      */
-    private async _attachMotion(uuidOrUrlOrPath: string, target: AnimationGraphTarget): Promise<void> {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const data = (await Rpc.getInstance().request(
-            'assetManager',
-            'queryAnimationGraphMotionPreviewData',
-            [uuidOrUrlOrPath, target as Extract<AnimationGraphTarget, { kind: 'motion' }>],
-        )) as unknown as AnimationGraphMotionPreviewData | null;
-        if (!data?.motion) {
-            throw new Error(`Animation Graph Motion preview data is unavailable for target ${JSON.stringify(target)}`);
+    private async _attachMotion(desc: MotionPreviewDesc): Promise<void> {
+        if (!desc?.motion) {
+            throw new Error(`Motion preview desc is empty, nothing to show.`);
         }
 
         this._resetMotionPreviewer();
         if (!this.motionPreviewer) {
-            throw new Error('Animation Graph Motion preview model has not been set.');
+            throw new Error('Motion preview model has not been set.');
         }
 
         // 先并行加载 Motion 用到的全部动画剪辑，再重建引擎 Motion。
         this.loadedClips.clear();
         await Promise.all(
-            Array.from(new Set(collectClipUuids(data.motion)))
+            Array.from(new Set(collectClipUuids(desc.motion)))
                 .filter(Boolean)
                 .map(async (clipUuid) => {
                     try {
                         this.loadedClips.set(clipUuid, await loadPreviewAsset(clipUuid, 'animation-clip'));
                     } catch (error) {
-                        console.warn(`[AnimationGraphMotionPreview] Failed to load clip ${clipUuid}:`, error);
+                        console.warn(`[MotionPreview] Failed to load clip ${clipUuid}:`, error);
                     }
                 }),
         );
 
-        const motion = this._rebuildMotion(data.motion);
+        const motion = this._buildMotion(desc.motion);
+        this.motionPreview = motion;
         this.motionPreviewer.setMotion(motion);
         this.time = 0;
         this._evaluate();
     }
 
     private _resetMotionPreviewer(): void {
+        this.motionPreview = null;
         if (this.motionPreviewer) {
             this.motionPreviewer.destroy?.();
             this.motionPreviewer = null;
@@ -260,73 +290,68 @@ export class AnimationGraphMotionPreview extends InteractivePreview {
         try {
             const { MotionPreviewer } = getNewGenAnim();
             if (!MotionPreviewer) {
-                console.warn('[AnimationGraphMotionPreview] MotionPreviewer is not available in the engine module.');
+                console.warn('[MotionPreview] MotionPreviewer is not available in the engine module.');
                 return;
             }
             this.motionPreviewer = new MotionPreviewer(this._modelNode);
         } catch (error) {
-            console.warn('[AnimationGraphMotionPreview] Failed to create MotionPreviewer:', error);
+            console.warn('[MotionPreview] Failed to create MotionPreviewer:', error);
         }
     }
 
     /**
-     * 根据结构化视图重建引擎 Motion。blend-1d/2d/direct 会把变量绑定清空为静态值，
-     * 以便「未注册变量实例」时仍可按 param 默认值采样（详见 bindOr 的回归行为）。
+     * 根据中立描述重建引擎 Motion。业务方已把变量绑定解析为静态值
+     * （`variable` 字段仅保留展示用），此处直接按值采样。
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private _rebuildMotion(view: AnimationGraphMotionView | null | undefined): any {
+    private _buildMotion(node: MotionPreviewDescNode | null | undefined): any {
         const api = getNewGenAnim();
-        if (!view) {
+        if (!node) {
             return null;
         }
-        switch (view.type) {
+        switch (node.kind) {
         case 'clip': {
             const clipMotion = new api.ClipMotion();
-            if (view.clipUuid) {
-                clipMotion.clip = this.loadedClips.get(view.clipUuid) ?? null;
+            if (node.clipUuid) {
+                clipMotion.clip = this.loadedClips.get(node.clipUuid) ?? null;
             }
             return clipMotion;
         }
         case 'blend-1d': {
             const blend = new api.AnimationBlend1D();
-            blend.param.value = view.value ?? 0;
+            blend.param.value = node.value;
             blend.param.variable = '';
-            blend.items = (view.children ?? []).map((child) => {
+            blend.items = (node.children ?? []).map((child) => {
                 const item = new api.AnimationBlend1D.Item();
-                item.motion = this._rebuildMotion(child);
-                item.threshold = typeof child.threshold === 'number'
-                    ? child.threshold
-                    : child.threshold?.x ?? 0;
+                item.motion = this._buildMotion(child.motion);
+                item.threshold = child.threshold;
                 return item;
             });
             return blend;
         }
         case 'blend-2d': {
             const blend = new api.AnimationBlend2D();
-            blend.paramX.value = view.valueX ?? 0;
+            blend.paramX.value = node.valueX;
             blend.paramX.variable = '';
-            blend.paramY.value = view.valueY ?? 0;
+            blend.paramY.value = node.valueY;
             blend.paramY.variable = '';
-            if (typeof view.algorithm === 'number') {
-                blend.algorithm = view.algorithm;
+            if (typeof node.algorithm === 'number') {
+                blend.algorithm = node.algorithm;
             }
-            blend.items = (view.children ?? []).map((child) => {
+            blend.items = (node.children ?? []).map((child) => {
                 const item = new api.AnimationBlend2D.Item();
-                item.motion = this._rebuildMotion(child);
-                item.threshold.set(
-                    child.threshold && typeof child.threshold === 'object' ? child.threshold.x : 0,
-                    child.threshold && typeof child.threshold === 'object' ? child.threshold.y : 0,
-                );
+                item.motion = this._buildMotion(child.motion);
+                item.threshold.set(child.threshold.x, child.threshold.y);
                 return item;
             });
             return blend;
         }
         case 'blend-direct': {
             const blend = new api.AnimationBlendDirect();
-            blend.items = (view.children ?? []).map((child) => {
+            blend.items = (node.children ?? []).map((child) => {
                 const item = new api.AnimationBlendDirect.Item();
-                item.motion = this._rebuildMotion(child);
-                item.weight.value = child.weight?.value ?? 0;
+                item.motion = this._buildMotion(child.motion);
+                item.weight.value = child.weight;
                 item.weight.variable = '';
                 return item;
             });
@@ -345,7 +370,7 @@ export class AnimationGraphMotionPreview extends InteractivePreview {
             this.motionPreviewer.setTime(this.time);
             this.motionPreviewer.evaluate();
         } catch (error) {
-            console.warn('[AnimationGraphMotionPreview] evaluate failed:', error);
+            console.warn('[MotionPreview] evaluate failed:', error);
         }
     }
 
@@ -366,17 +391,20 @@ export class AnimationGraphMotionPreview extends InteractivePreview {
 }
 
 /**
- * 收集 Motion 视图递归引用到的全部动画剪辑 uuid，供预览前并行加载。
+ * 收集 Motion 描述递归引用到的全部动画剪辑 uuid，供预览前并行加载。
  */
-function collectClipUuids(view: AnimationGraphMotionView | null | undefined, out: string[] = []): string[] {
-    if (!view) {
+function collectClipUuids(node: MotionPreviewDescNode | null | undefined, out: string[] = []): string[] {
+    if (!node) {
         return out;
     }
-    if (view.type === 'clip' && view.clipUuid) {
-        out.push(view.clipUuid);
+    if (node.kind === 'clip') {
+        if (node.clipUuid) {
+            out.push(node.clipUuid);
+        }
+        return out;
     }
-    for (const child of view.children ?? []) {
-        collectClipUuids(child, out);
+    for (const child of node.children) {
+        collectClipUuids(child.motion, out);
     }
     return out;
 }

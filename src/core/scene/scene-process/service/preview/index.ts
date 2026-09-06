@@ -7,9 +7,9 @@ import { MeshPreview } from './mesh-preview';
 import { SkeletonPreview } from './skeleton-preview';
 import { PrefabPreview } from './prefab-preview';
 import { SpinePreview } from './spine-preview';
-import { AnimationGraphMotionPreview } from './animation-graph-motion-preview';
+import { MotionPreview } from './motion-preview';
 import { Camera, gfx } from 'cc';
-import type { AnimationGraphTarget } from '../../../../assets/@types/public';
+import type { MotionPreviewDesc } from '../../../common/preview';
 import { BaseService, register, Service } from '../core';
 import { Rpc } from '../../rpc';
 import type { InteractivePreview } from './interactive-preview';
@@ -37,7 +37,7 @@ export class PreviewService extends BaseService<IPreviewEvents> implements IPrev
     skeletonPreview = new SkeletonPreview();
     prefabPreview = new PrefabPreview();
     spinePreview = new SpinePreview();
-    animationGraphMotionPreview = new AnimationGraphMotionPreview();
+    motionPreview = new MotionPreview();
 
     get activePreview(): IPreviewInstance | null {
         return this._activePreview;
@@ -54,7 +54,7 @@ export class PreviewService extends BaseService<IPreviewEvents> implements IPrev
         this.initPreview('scene:skeleton-preview', 'query-skeleton-preview-data', this.skeletonPreview);
         this.initPreview('scene:prefab-preview', 'query-prefab-preview-data', this.prefabPreview);
         this.initPreview('scene:spine-preview', 'query-spine-preview-data', this.spinePreview);
-        this.initPreview('scene:animation-graph-preview', 'query-animation-graph-preview-data', this.animationGraphMotionPreview);
+        this.initPreview('scene:motion-preview', 'query-motion-preview-data', this.motionPreview);
         this.initTypeMap();
         console.log('[Preview] PreviewService initialized');
     }
@@ -114,46 +114,78 @@ export class PreviewService extends BaseService<IPreviewEvents> implements IPrev
         return false;
     }
 
-    // --- Animation Graph Motion 预览（透传到 animationGraphMotionPreview 实例） ---
+    // --- 通用 Motion 预览（透传到 motionPreview 实例） ---
 
-    public async showAnimationGraphMotion(uuidOrUrlOrPath: string, target: AnimationGraphTarget): Promise<boolean> {
-        return this.animationGraphMotionPreview.showMotionPreview(uuidOrUrlOrPath, target);
+    public async showMotion(desc: MotionPreviewDesc): Promise<boolean> {
+        return this.motionPreview.showMotion(desc);
     }
 
-    public hideAnimationGraphMotion(): void {
-        this.animationGraphMotionPreview.hideMotionPreview();
+    public hideMotion(): void {
+        // 结束未完成的相机手势，避免调用方在释放事件丢失后污染下一次预览。
+        if (this.motionPreview.isActive) {
+            this.motionPreview.onMouseUp({ x: 0, y: 0 });
+        }
+        this.motionPreview.hideMotionPreview();
     }
 
-    public async setAnimationGraphMotionModel(uuid: string): Promise<void> {
-        await this.animationGraphMotionPreview.setModel(uuid);
+    public async setMotionModel(uuid: string): Promise<void> {
+        await this.motionPreview.setModel(uuid);
     }
 
-    public setAnimationGraphMotionTime(time: number): void {
-        this.animationGraphMotionPreview.setTimeMotionPreview(time);
+    public setMotionTime(time: number): void {
+        this.motionPreview.setTimeMotionPreview(time);
     }
 
-    public playAnimationGraphMotion(): void {
-        this.animationGraphMotionPreview.playMotionPreview();
+    public playMotion(): void {
+        this.motionPreview.playMotionPreview();
     }
 
-    public pauseAnimationGraphMotion(): void {
-        this.animationGraphMotionPreview.pauseMotionPreview();
+    public pauseMotion(): void {
+        this.motionPreview.pauseMotionPreview();
     }
 
-    public stopAnimationGraphMotion(): void {
-        this.animationGraphMotionPreview.stopMotionPreview();
+    public stopMotion(): void {
+        this.motionPreview.stopMotionPreview();
     }
 
-    public setAnimationGraphMotionVariable(name: string, value: number): void {
-        this.animationGraphMotionPreview.setMotionPreviewVariable(name, value);
+    public setMotionVariable(name: string, value: number): void {
+        this.motionPreview.setMotionPreviewVariable(name, value);
     }
 
-    public async isAnimationGraphMotionActive(): Promise<boolean> {
-        return this.animationGraphMotionPreview.isActive;
+    public setMotionParameter(axis: 'value' | 'x' | 'y', value: number): void {
+        this.motionPreview.setMotionPreviewParameter(axis, value);
     }
 
-    public async queryAnimationGraphMotionImage(info: { width: number; height: number }): Promise<unknown> {
-        return this.animationGraphMotionPreview.queryPreviewData(info);
+    public async getMotionTimelineStats(): Promise<{ timeLineLength: number } | null> {
+        return this.motionPreview.getMotionPreviewTimelineStats();
+    }
+
+    public async isMotionActive(): Promise<boolean> {
+        return this.motionPreview.isActive;
+    }
+
+    public async queryMotionImage(info: { width: number; height: number }): Promise<unknown> {
+        return this.motionPreview.queryPreviewData(info);
+    }
+
+    public async onMotionMouseDown(action: { x: number; y: number; button: number }): Promise<void> {
+        if (!this.motionPreview.isActive) return;
+        this.motionPreview.onMouseDown(action);
+    }
+
+    public async onMotionMouseMove(action: { movementX: number; movementY: number }): Promise<void> {
+        if (!this.motionPreview.isActive) return;
+        this.motionPreview.onMouseMove(action);
+    }
+
+    public async onMotionMouseUp(action: { x: number; y: number }): Promise<void> {
+        if (!this.motionPreview.isActive) return;
+        this.motionPreview.onMouseUp(action);
+    }
+
+    public async onMotionMouseWheel(action: { wheelDeltaY: number; wheelDeltaX: number }): Promise<void> {
+        if (!this.motionPreview.isActive) return;
+        this.motionPreview.onMouseWheel(action);
     }
 
     // --- 上屏预览 ---

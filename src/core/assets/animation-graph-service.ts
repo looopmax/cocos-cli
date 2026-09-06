@@ -1085,19 +1085,18 @@ class AnimationGraphAssetService {
                 default: 0,
                 enumList: enumList(api.AnimationBlend2D.Algorithm),
             });
-            // Blend 2D 的参数通过变量下拉选择（FLOAT 变量），常量值字段不在表单中展示。
             properties.variableX = nestedProperty(motion.paramX, 'variable', {
                 type: 'String',
                 default: '',
                 ui: { name: 'animationGraphVariableSelect' },
             });
-            properties.valueX = nestedProperty(motion.paramX, 'value', { type: 'Number', default: 0, visible: false });
+            properties.valueX = nestedProperty(motion.paramX, 'value', { type: 'Number', default: 0 });
             properties.variableY = nestedProperty(motion.paramY, 'variable', {
                 type: 'String',
                 default: '',
                 ui: { name: 'animationGraphVariableSelect' },
             });
-            properties.valueY = nestedProperty(motion.paramY, 'value', { type: 'Number', default: 0, visible: false });
+            properties.valueY = nestedProperty(motion.paramY, 'value', { type: 'Number', default: 0 });
         }
         return createAdapterBinding(getClassName(motion), properties);
     }

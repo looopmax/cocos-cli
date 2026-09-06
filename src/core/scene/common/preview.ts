@@ -23,35 +23,82 @@ export interface ISpinePreviewInstance extends IPreviewInstance {
     close(): void;
 }
 
-export interface IPreviewService extends IAnimationGraphMotionPreviewService {
+export interface IPreviewService extends IMotionPreviewService {
     open(uuid: string): Promise<IPreviewInstance | null>;
     generateThumbnail(uuid: string, assetType: string, width?: number, height?: number): Promise<any>;
 }
 
 /**
- * Animation Graph Motion 预览子能力（scene-process Preview 服务按同名方法透传）。
- * `target` 与 Inspector 使用的 `AnimationGraphTarget` 一致。
+ * 通用 Motion 预览描述（中立、可序列化）。
+ * 由业务方（如 AnimationGraph 扩展）翻译自各自的资产数据后传入；
+ * scene 侧只理解本结构，不理解任何业务资产类型。
  */
-export interface IAnimationGraphMotionPreviewService {
-    showAnimationGraphMotion(uuidOrUrlOrPath: string, target: import('../../assets/@types/public').AnimationGraphTarget): Promise<boolean>;
-    hideAnimationGraphMotion(): void;
-    setAnimationGraphMotionModel(uuid: string): Promise<void>;
-    setAnimationGraphMotionTime(time: number): void;
-    playAnimationGraphMotion(): void;
-    pauseAnimationGraphMotion(): void;
-    stopAnimationGraphMotion(): void;
-    setAnimationGraphMotionVariable(name: string, value: number): void;
-    isAnimationGraphMotionActive(): Promise<boolean>;
-    queryAnimationGraphMotionImage(info: { width: number; height: number }): Promise<unknown>;
+export type MotionPreviewDescNode =
+    | { kind: 'clip'; clipUuid: string | null }
+    | {
+        kind: 'blend-1d';
+        variable: string | null;
+        value: number;
+        children: { motion: MotionPreviewDescNode | null; threshold: number }[];
+    }
+    | {
+        kind: 'blend-2d';
+        variableX: string | null;
+        valueX: number;
+        variableY: string | null;
+        valueY: number;
+        algorithm?: number;
+        children: { motion: MotionPreviewDescNode | null; threshold: { x: number; y: number } }[];
+    }
+    | {
+        kind: 'blend-direct';
+        children: { motion: MotionPreviewDescNode | null; weight: number }[];
+    };
+
+export interface MotionPreviewVariable {
+    name: string;
+    value: number | null;
+}
+
+export interface MotionPreviewDesc {
+    motion: MotionPreviewDescNode | null;
+    variables: MotionPreviewVariable[];
+}
+
+/**
+ * 通用 Motion 预览子能力（scene-process Preview 服务按同名方法透传）。
+ * 入参均为中立描述，不携带业务资产寻址信息。
+ */
+export interface IMotionPreviewService {
+    showMotion(desc: MotionPreviewDesc): Promise<boolean>;
+    hideMotion(): void;
+    setMotionModel(uuid: string): Promise<void>;
+    setMotionTime(time: number): void;
+    playMotion(): void;
+    pauseMotion(): void;
+    stopMotion(): void;
+    setMotionVariable(name: string, value: number): void;
+    setMotionParameter(axis: 'value' | 'x' | 'y', value: number): void;
+    getMotionTimelineStats(): Promise<{ timeLineLength: number } | null>;
+    isMotionActive(): Promise<boolean>;
+    queryMotionImage(info: { width: number; height: number }): Promise<unknown>;
+    onMotionMouseDown(action: { x: number; y: number; button: number }): Promise<void>;
+    onMotionMouseMove(action: { movementX: number; movementY: number }): Promise<void>;
+    onMotionMouseUp(action: { x: number; y: number }): Promise<void>;
+    onMotionMouseWheel(action: { wheelDeltaY: number; wheelDeltaX: number }): Promise<void>;
 }
 
 export type IPublicPreviewService = Pick<IPreviewService,
     'open' | 'generateThumbnail'
-    | 'showAnimationGraphMotion' | 'hideAnimationGraphMotion'
-    | 'setAnimationGraphMotionModel' | 'setAnimationGraphMotionTime'
-    | 'playAnimationGraphMotion' | 'pauseAnimationGraphMotion' | 'stopAnimationGraphMotion'
-    | 'setAnimationGraphMotionVariable' | 'isAnimationGraphMotionActive'
-    | 'queryAnimationGraphMotionImage'
+    | 'showMotion' | 'hideMotion'
+    | 'setMotionModel' | 'setMotionTime'
+    | 'playMotion' | 'pauseMotion' | 'stopMotion'
+    | 'setMotionVariable' | 'isMotionActive'
+    | 'setMotionParameter'
+    | 'getMotionTimelineStats'
+    | 'queryMotionImage'
+    | 'onMotionMouseDown' | 'onMotionMouseMove'
+    | 'onMotionMouseUp' | 'onMotionMouseWheel'
 >;
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
