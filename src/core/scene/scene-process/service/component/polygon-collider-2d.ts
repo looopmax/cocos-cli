@@ -237,7 +237,8 @@ async function generateSpriteAlphaPolygonPoints(
 function resolveSpriteFrameSourceUuid(spriteFrame: SpriteFrame): string | undefined {
     const originalTextureUuid = (spriteFrame.original as { _texture?: { _uuid?: string } } | null | undefined)?._texture?._uuid;
     const textureUuid = originalTextureUuid ?? (spriteFrame.texture as { _uuid?: string } | null | undefined)?._uuid;
-    return textureUuid?.split('@')[0];
+    const spriteFrameUuid = (spriteFrame as { _uuid?: string })._uuid;
+    return (textureUuid ?? spriteFrameUuid)?.split('@')[0];
 }
 
 function hasUsableTransform(transform: UITransform | null): transform is UITransform {
